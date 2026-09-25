@@ -1,18 +1,18 @@
 # ZPROO GO — Architecture & Implementation Plan
 
-> Unified Mobility & Travel Super App — *"Travel Smarter. Go Further."*
+> Unified Mobility & Travel Super App — _"Travel Smarter. Go Further."_
 >
-> Status: **Planning (pre-Phase 1)**. No application code exists yet; the repository was empty when this plan was written.
+> Status: **Phase 1 (foundation) complete**, awaiting approval to start Phase 2 (authentication). Sections 0 and 16 record where things stood when the plan was written and what is still open.
 > This document is the reference for all 23 phases. Per-topic docs (`ARCHITECTURE.md`, `API.md`, `DATABASE.md`, …) are created in the phase that implements them.
 
 ---
 
 ## 0. Current repository state
 
-| Item | State |
-|---|---|
-| Git history | Empty — no commits on `claude/gallant-mendel-7cikw6` |
-| Source files | None |
+| Item         | State                                                                                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Git history  | Empty — no commits on `claude/gallant-mendel-7cikw6`                                                                          |
+| Source files | None                                                                                                                          |
 | Brand assets | **Not in repo.** Only two app-flow reference screenshots were supplied (1254×1254 JPG). No standalone logo file was supplied. |
 
 Because the repository is empty, the plan is to **initialise the complete monorepo** in Phase 1. Nothing will be deleted or migrated.
@@ -52,17 +52,17 @@ Because the repository is empty, the plan is to **initialise the complete monore
 
 **Key decisions**
 
-| Decision | Choice | Why |
-|---|---|---|
-| Monorepo tooling | npm workspaces + Turborepo | Matches requested `turbo.json`; no extra package manager |
-| Admin panel | Lazy-loaded route tree inside `apps/web` at `/admin`, separate layout + chunk | Matches the requested structure (only `web` and `api` apps) and the `/admin` route; admin code is never downloaded by customers. Can be split into `apps/admin` later with no API change |
-| Money | Integer **paise** (`Int`) everywhere; currency code column | No floating-point rounding in fares, taxes, refunds, wallet |
-| IDs | `cuid2` string PKs; human references (`ZP-2026-XXXXXX`) as separate unique columns | Non-enumerable IDs; friendly refs for customers |
-| Background jobs | BullMQ on Redis | Notifications, PDF generation, seat-hold expiry, refund processing, webhook retries |
-| API docs | `@asteasolutions/zod-to-openapi` + `swagger-ui-express` at `/api/docs` | One Zod schema is the source of truth for validation *and* OpenAPI |
-| Logging | Pino + pino-http with redaction | Structured JSON, request IDs, fast |
-| PDF | `pdfkit` (server) | Tickets/invoices generated server-side with the official logo; no headless browser needed |
-| Charts (admin) | Recharts | Only addition beyond the requested stack; needed for dashboard charts |
+| Decision         | Choice                                                                            | Why                                                                                                                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo tooling | npm workspaces + Turborepo                                                        | Matches requested `turbo.json`; no extra package manager                                                                                                                                 |
+| Admin panel      | Lazy-loaded route tree inside `apps/web` at `/admin`, separate layout + chunk     | Matches the requested structure (only `web` and `api` apps) and the `/admin` route; admin code is never downloaded by customers. Can be split into `apps/admin` later with no API change |
+| Money            | Integer **paise** (`Int`) everywhere; currency code column                        | No floating-point rounding in fares, taxes, refunds, wallet                                                                                                                              |
+| IDs              | `cuid` string PKs; human references (`ZP-2026-XXXXXX`) as separate unique columns | Non-enumerable IDs; friendly refs for customers                                                                                                                                          |
+| Background jobs  | BullMQ on Redis                                                                   | Notifications, PDF generation, seat-hold expiry, refund processing, webhook retries                                                                                                      |
+| API docs         | `@asteasolutions/zod-to-openapi` + `swagger-ui-express` at `/api/docs`            | One Zod schema is the source of truth for validation _and_ OpenAPI                                                                                                                       |
+| Logging          | Pino + pino-http with redaction                                                   | Structured JSON, request IDs, fast                                                                                                                                                       |
+| PDF              | `pdfkit` (server)                                                                 | Tickets/invoices generated server-side with the official logo; no headless browser needed                                                                                                |
+| Charts (admin)   | Recharts                                                                          | Only addition beyond the requested stack; needed for dashboard charts                                                                                                                    |
 
 ---
 
@@ -161,24 +161,24 @@ IdempotencyKey · WebhookEvent · SystemSetting
 
 **Model groups (all required models plus the few needed to make them work):**
 
-| Group | Models | Notes |
-|---|---|---|
-| Identity | User, Role, Permission, UserRole, RolePermission, RefreshToken, OtpCode, Address, Passenger | `User.deletedAt` soft delete; unique `phone`, unique `email`; refresh & OTP stored **hashed** |
-| Booking core | Booking, BookingPassenger | `bookingReference` unique; `(userId, createdAt)`, `(status)`, `(serviceType, travelDate)` indexes; `metadata Json` |
-| Flights | Airline, Airport, Flight, FlightSegment, FlightBooking | `Airport.iataCode` unique |
-| Buses | BusOperator, Bus, BusSeat, BusRoute, **BusTrip**, **BusSeatBooking**, BusBooking | Unique `(busTripId, busSeatId)` on active seat bookings → DB-level double-booking guard |
-| Trains | Train, TrainStation, TrainSchedule, **TrainClassFare**, TrainBooking | Provider-backed; local tables act as cache/mock |
-| Hotels | Hotel, HotelRoom, **HotelRoomInventory**, HotelBooking | Per-date inventory row, decremented in a transaction |
-| Mobility | Cab, Driver, Vehicle, Ride | `Ride.status` state machine; driver location in Redis (hot) + periodic snapshot |
-| Holiday / Parcel | HolidayPackage, HolidayItineraryDay, HolidayBooking, Parcel, ParcelTrackingEvent | `Parcel.trackingNumber` unique |
-| Corporate | CorporateCompany, CorporateEmployee, CorporatePolicy, CorporateApproval | GSTIN on company |
-| Money | Wallet, WalletTransaction, Payment, Refund, IdempotencyKey, WebhookEvent | `Wallet.version` for optimistic locking; `WebhookEvent.providerEventId` unique for dedupe |
-| Marketing | Offer, Coupon, CouponUsage | `Coupon.code` unique; usage counted transactionally |
-| Engagement | Notification, SupportTicket, SupportMessage, Review | |
-| Partners | Partner, Commission, PartnerSettlement | API credentials stored encrypted (AES-GCM, key from env) |
-| Platform | AuditLog, SystemSetting | AuditLog is append-only |
+| Group            | Models                                                                                      | Notes                                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Identity         | User, Role, Permission, UserRole, RolePermission, RefreshToken, OtpCode, Address, Passenger | `User.deletedAt` soft delete; unique `phone`, unique `email`; refresh & OTP stored **hashed**                      |
+| Booking core     | Booking, BookingPassenger                                                                   | `bookingReference` unique; `(userId, createdAt)`, `(status)`, `(serviceType, travelDate)` indexes; `metadata Json` |
+| Flights          | Airline, Airport, Flight, FlightSegment, FlightBooking                                      | `Airport.iataCode` unique                                                                                          |
+| Buses            | BusOperator, Bus, BusSeat, BusRoute, **BusTrip**, **BusSeatBooking**, BusBooking            | Unique `(busTripId, busSeatId)` on active seat bookings → DB-level double-booking guard                            |
+| Trains           | Train, TrainStation, TrainSchedule, **TrainClassFare**, TrainBooking                        | Provider-backed; local tables act as cache/mock                                                                    |
+| Hotels           | Hotel, HotelRoom, **HotelRoomInventory**, HotelBooking                                      | Per-date inventory row, decremented in a transaction                                                               |
+| Mobility         | Cab, Driver, Vehicle, Ride                                                                  | `Ride.status` state machine; driver location in Redis (hot) + periodic snapshot                                    |
+| Holiday / Parcel | HolidayPackage, HolidayItineraryDay, HolidayBooking, Parcel, ParcelTrackingEvent            | `Parcel.trackingNumber` unique                                                                                     |
+| Corporate        | CorporateCompany, CorporateEmployee, CorporatePolicy, CorporateApproval                     | GSTIN on company                                                                                                   |
+| Money            | Wallet, WalletTransaction, Payment, Refund, IdempotencyKey, WebhookEvent                    | `Wallet.version` for optimistic locking; `WebhookEvent.providerEventId` unique for dedupe                          |
+| Marketing        | Offer, Coupon, CouponUsage                                                                  | `Coupon.code` unique; usage counted transactionally                                                                |
+| Engagement       | Notification, SupportTicket, SupportMessage, Review                                         |                                                                                                                    |
+| Partners         | Partner, Commission, PartnerSettlement                                                      | API credentials stored encrypted (AES-GCM, key from env)                                                           |
+| Platform         | AuditLog, SystemSetting                                                                     | AuditLog is append-only                                                                                            |
 
-Bold models are additions required for correctness (e.g. seats must be booked per *trip*, not per bus).
+Bold models are additions required for correctness (e.g. seats must be booked per _trip_, not per bus).
 
 ---
 
@@ -273,18 +273,18 @@ Controllers and services depend only on the interfaces; `registry.ts` is the onl
 
 ## 11. UI page architecture
 
-| Area | Routes |
-|---|---|
-| Public | `/`, `/offers`, `/help`, `/contact`, `/holidays`, `/holidays/:id`, legal pages (`/terms`, `/privacy`, `/refund-policy`) |
-| Auth | `/login`, `/signup`, `/verify-otp`, `/forgot-password`, `/reset-password` |
-| Flights | `/flights`, `/flights/results`, `/flights/:id`, `/flights/booking`, `/flights/review`, `/flights/payment`, `/flights/confirmation` |
-| Buses | `/buses`, `/buses/results`, `/buses/:id`, `/buses/:id/seats` |
-| Trains | `/trains`, `/trains/results` |
-| Hotels | `/hotels`, `/hotels/results`, `/hotels/:id`, `/hotels/:id/rooms` |
-| Mobility | `/cabs`, `/cabs/booking`, `/rides/:id`, `/bikes` |
-| Parcel / Corporate | `/parcel`, `/parcel/track/:id`, `/corporate` |
-| Account (auth) | `/wallet`, `/bookings`, `/bookings/:id`, `/profile` |
-| Admin (role) | `/admin`, `/admin/<section>` |
+| Area               | Routes                                                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Public             | `/`, `/offers`, `/help`, `/contact`, `/holidays`, `/holidays/:id`, legal pages (`/terms`, `/privacy`, `/refund-policy`)            |
+| Auth               | `/login`, `/signup`, `/verify-otp`, `/forgot-password`, `/reset-password`                                                          |
+| Flights            | `/flights`, `/flights/results`, `/flights/:id`, `/flights/booking`, `/flights/review`, `/flights/payment`, `/flights/confirmation` |
+| Buses              | `/buses`, `/buses/results`, `/buses/:id`, `/buses/:id/seats`                                                                       |
+| Trains             | `/trains`, `/trains/results`                                                                                                       |
+| Hotels             | `/hotels`, `/hotels/results`, `/hotels/:id`, `/hotels/:id/rooms`                                                                   |
+| Mobility           | `/cabs`, `/cabs/booking`, `/rides/:id`, `/bikes`                                                                                   |
+| Parcel / Corporate | `/parcel`, `/parcel/track/:id`, `/corporate`                                                                                       |
+| Account (auth)     | `/wallet`, `/bookings`, `/bookings/:id`, `/profile`                                                                                |
+| Admin (role)       | `/admin`, `/admin/<section>`                                                                                                       |
 
 Shared booking steps (review → payment → confirmation) are generic components parameterised by service, so flights/buses/hotels/etc. reuse them. Every route is `React.lazy` code-split. Mobile (<768 px) gets app-style screens matching the reference flows: bottom nav (Home · Bookings · Wallet · Offers · Profile), full-screen step pages, sticky bottom CTA — not a shrunken desktop.
 
@@ -296,18 +296,18 @@ Derived from the supplied references (red header/splash, white cards, red pill C
 
 ```css
 :root {
-  --primary:        #D9141E;  /* sampled from logo in references (~#D40408–#E0080F); finalise from original logo file */
-  --primary-hover:  #B80F18;
-  --primary-light:  #FDECEC;
-  --background:     #F8FAFC;
-  --foreground:     #111827;
-  --muted:          #6B7280;
-  --border:         #E5E7EB;
-  --card:           #FFFFFF;
-  --success:        #16A34A;
-  --warning:        #F59E0B;
-  --danger:         #DC2626;
-  --radius:         0.875rem;
+  --primary: #d9141e; /* sampled from logo in references (~#D40408–#E0080F); finalise from original logo file */
+  --primary-hover: #b80f18;
+  --primary-light: #fdecec;
+  --background: #f8fafc;
+  --foreground: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --card: #ffffff;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --radius: 0.875rem;
 }
 ```
 
@@ -323,18 +323,18 @@ Derived from the supplied references (red header/splash, white cards, red pill C
 
 ## 13. Development phases
 
-| # | Phase | Exit criteria |
-|---|---|---|
+| #     | Phase                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Exit criteria                                                                                                                                                                      |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1** | **Foundation** — monorepo, Turborepo, shared tsconfig/eslint/prettier, `apps/web` (Vite, Tailwind, shadcn/ui, tokens, Logo, layouts, router skeleton, 404), `apps/api` (Express, config/env validation, Pino, request ID, Helmet, CORS, rate-limit, error classes, envelope, `/api/health`, Swagger shell), Prisma + Postgres connection + identity/platform models + first migration, `packages/*`, docker-compose for Postgres/Redis, `.env.example`, basic CI (lint/typecheck/test/build) | `npm run build`, `typecheck`, `lint`, `test` all green; `docker compose up postgres redis` + `prisma migrate dev` works; web renders branded shell; `/api/health` reports DB+Redis |
-| 2 | Auth (OTP, password, JWT, refresh rotation, RBAC, auth pages) | Auth test suite green |
-| 3 | Home page (header, hero, search widget, services, deals, destinations, wallet/app promos, footer, SEO) | Lighthouse ≥ 90 perf/a11y on home |
-| 4–11 | Flights → Buses → Trains → Hotels → Cabs → Bikes → Holidays → Parcel (each: schema + migration, provider, API, UI, seed, tests) | Search→book works end-to-end on mock payment |
-| 12 | Corporate | Approval workflow tested |
-| 13–15 | Wallet → Payments (Razorpay) → Booking engine hardening (cancellation/refunds/PDFs) | Payment + refund integration tests green |
-| 16–17 | Notifications (email/SMS/in-app, templates) → Support | |
-| 18–19 | Admin dashboard → Reports & analytics | Admin authz tests green |
-| 20 | Full test pass (unit, integration, Playwright E2E for flight/bus/train/hotel/cab/wallet) | |
-| 21–23 | Docker images → CI/CD with E2E → production deployment docs | |
+| 2     | Auth (OTP, password, JWT, refresh rotation, RBAC, auth pages)                                                                                                                                                                                                                                                                                                                                                                                                                                | Auth test suite green                                                                                                                                                              |
+| 3     | Home page (header, hero, search widget, services, deals, destinations, wallet/app promos, footer, SEO)                                                                                                                                                                                                                                                                                                                                                                                       | Lighthouse ≥ 90 perf/a11y on home                                                                                                                                                  |
+| 4–11  | Flights → Buses → Trains → Hotels → Cabs → Bikes → Holidays → Parcel (each: schema + migration, provider, API, UI, seed, tests)                                                                                                                                                                                                                                                                                                                                                              | Search→book works end-to-end on mock payment                                                                                                                                       |
+| 12    | Corporate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Approval workflow tested                                                                                                                                                           |
+| 13–15 | Wallet → Payments (Razorpay) → Booking engine hardening (cancellation/refunds/PDFs)                                                                                                                                                                                                                                                                                                                                                                                                          | Payment + refund integration tests green                                                                                                                                           |
+| 16–17 | Notifications (email/SMS/in-app, templates) → Support                                                                                                                                                                                                                                                                                                                                                                                                                                        |                                                                                                                                                                                    |
+| 18–19 | Admin dashboard → Reports & analytics                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Admin authz tests green                                                                                                                                                            |
+| 20    | Full test pass (unit, integration, Playwright E2E for flight/bus/train/hotel/cab/wallet)                                                                                                                                                                                                                                                                                                                                                                                                     |                                                                                                                                                                                    |
+| 21–23 | Docker images → CI/CD with E2E → production deployment docs                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                                                                    |
 
 After every phase: build web, build api, typecheck, lint, test, verify routes & DB, fix, then stop for approval.
 
@@ -422,7 +422,7 @@ The API validates all variables with Zod at boot and refuses to start with missi
 
 ## 16. Open items needing the product owner
 
-1. **Official logo file.** Only the two app-flow screenshots were supplied; the logo inside them is small and JPEG-compressed. Please add the original logo (PNG/SVG, ideally transparent) — it will be placed unmodified at `apps/web/public/assets/brand/zproo-go-logo.png`. A white variant and favicon will only be derived if the original allows it without altering the mark.
-2. **Brand red.** Sampled from the references as ~`#D9141E`; will be re-sampled from the original logo file.
+1. **Official logo file.** Still needed. Phase 1 uses the logo extracted, unmodified, from the supplied reference image (see [BRAND.md](BRAND.md)). Replace the PNGs at the same paths when the original file is available.
+2. **Brand red.** `#D9141E`, sampled from the references. Re-check against the original logo file.
 3. **Imagery.** Travel photography must be licensed. Proposed: free-licence stock (Unsplash/Pexels licence) downloaded into `public/assets/*` with attribution recorded in `docs/`, or your own licensed image set.
-4. **Admin placement.** Plan is `/admin` inside `apps/web` as a separate lazy chunk. Say if you want a standalone `apps/admin` instead.
+4. **Admin placement.** Implemented as `/admin` inside `apps/web` (separate lazy chunk). It can move to a standalone `apps/admin` later if you want.
