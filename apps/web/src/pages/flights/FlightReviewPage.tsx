@@ -8,20 +8,20 @@ import { Link, Navigate, useNavigate } from 'react-router';
 import { FormAlert } from '@/features/auth/components/FormAlert';
 import { errorMessage } from '@/features/auth/errors';
 import { flightsApi, useItineraryOffers } from '@/features/flights/api';
-import { CheckoutShell, NoFlightSelected } from '@/features/flights/components/CheckoutShell';
-import { DemoBanner } from '@/features/flights/components/DemoBanner';
+import { CheckoutShell, NothingSelected } from '@/features/checkout/CheckoutShell';
+import { DemoBanner } from '@/features/checkout/DemoBanner';
 import { ItinerarySummary } from '@/features/flights/components/ItinerarySummary';
-import { PriceSummary } from '@/features/flights/components/PriceSummary';
+import { PriceSummary } from '@/features/checkout/PriceSummary';
 import { useFlightDraft } from '@/features/flights/draft';
 import { inr } from '@/features/flights/format';
-import { paymentUrl } from '@/features/flights/links';
+import { paymentUrl } from '@/features/checkout/links';
 import { ApiClientError } from '@/services/http';
 
 const TITLE = { MR: 'Mr', MRS: 'Mrs', MS: 'Ms', MSTR: 'Master', MISS: 'Miss' } as const;
 
 export default function FlightReviewPage() {
   const draft = useFlightDraft();
-  if (!draft.itinerary) return <NoFlightSelected />;
+  if (!draft.itinerary) return <NothingSelected />;
   if (!draft.passengers || !draft.contact) return <Navigate to="/flights/booking" replace />;
   return <Review />;
 }
@@ -53,7 +53,7 @@ function Review() {
       ),
     onSuccess: (booking) => {
       draft.setReference(booking.reference);
-      void navigate(paymentUrl(booking.reference));
+      void navigate(paymentUrl('flight', booking.reference));
     },
     onError: (err) => {
       if (err instanceof ApiClientError && err.errorCode === 'PRICE_CHANGED') void refetch();
@@ -75,7 +75,7 @@ function Review() {
 
   const continueToPayment = () => {
     // Already booked from this draft (e.g. came back from payment): don't book again.
-    if (draft.reference) return void navigate(paymentUrl(draft.reference));
+    if (draft.reference) return void navigate(paymentUrl('flight', draft.reference));
     book.mutate();
   };
 

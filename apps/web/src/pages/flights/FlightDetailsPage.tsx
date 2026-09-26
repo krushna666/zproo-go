@@ -6,9 +6,9 @@ import { Seo } from '@/components/seo/Seo';
 import { FormAlert } from '@/features/auth/components/FormAlert';
 import { errorMessage } from '@/features/auth/errors';
 import { useFlightOffer } from '@/features/flights/api';
-import { DemoBanner } from '@/features/flights/components/DemoBanner';
+import { DemoBanner } from '@/features/checkout/DemoBanner';
 import { FlightTimeline } from '@/features/flights/components/FlightTimeline';
-import { PriceSummary } from '@/features/flights/components/PriceSummary';
+import { PriceSummary } from '@/features/checkout/PriceSummary';
 import { useFlightDraft } from '@/features/flights/draft';
 import { inr, localDay, stopsLabel, travellersLabel } from '@/features/flights/format';
 

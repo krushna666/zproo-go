@@ -67,10 +67,13 @@ function booking(overrides: Partial<BookingDetails> = {}): BookingDetails {
         firstName: 'Amit',
         lastName: 'Sharma',
         dateOfBirth: null,
+        age: null,
         gender: 'MALE',
+        seatNumber: null,
       },
     ],
     flights: [{ sequence: 1, offer, pnr: null, tickets: [] }],
+    bus: null,
     ...overrides,
   };
 }

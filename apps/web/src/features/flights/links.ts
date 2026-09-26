@@ -9,9 +9,3 @@ const paxQuery = (pax: PaxCounts) =>
 
 export const offerUrl = (offerId: string, pax: PaxCounts) =>
   `/flights/${encodeURIComponent(offerId)}?${paxQuery(pax)}`;
-
-export const paymentUrl = (reference: string) =>
-  `/flights/payment?ref=${encodeURIComponent(reference)}`;
-
-export const confirmationUrl = (reference: string) =>
-  `/flights/confirmation?ref=${encodeURIComponent(reference)}`;

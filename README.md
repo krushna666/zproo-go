@@ -11,7 +11,9 @@ ZPROO GO brings flights, buses, trains, hotels, cabs, bike taxis, holidays, parc
 corporate travel into one platform: a customer website, an admin panel, a REST + real-time API,
 and a PostgreSQL database.
 
-> **Status: Phase 4 (flights) complete.** Flights can be searched, filtered, booked and paid for end
+> **Status: Phase 5 (buses) complete.** Buses across Maharashtra and India: search, filters, a
+> live seat map (sleeper and seater, both decks, ladies seats), boarding and dropping points, and
+> the same secure booking, payment and e-ticket flow as flights. Phase 4 (flights): Flights can be searched, filtered, booked and paid for end
 > to end: one way, round trip and multi-city search, seat holds, idempotent booking, verified
 > payment (simulated gateway in development), PNR and a PDF e-ticket. Development uses a mock
 > timetable with fictional airlines. Travel modules land phase by phase; see

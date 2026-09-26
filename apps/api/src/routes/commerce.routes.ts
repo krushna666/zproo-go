@@ -1,8 +1,9 @@
 import { Permission } from '@zproo/types';
-import { bookFlightSchema, idSchema } from '@zproo/validation';
+import { bookBusSchema, bookFlightSchema, idSchema } from '@zproo/validation';
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import type { createBookingsController } from '../controllers/bookings.controller';
+import type { createBusesController } from '../controllers/buses.controller';
 import { offerQuerySchema, type createFlightsController } from '../controllers/flights.controller';
 import type { createPaymentsController } from '../controllers/payments.controller';
 import { authorize } from '../middleware/auth';
@@ -17,6 +18,30 @@ const referenceParams = z.object({
     .toUpperCase()
     .regex(/^ZP-\d{4}-[0-9A-Z]{6}$/, 'Invalid booking reference'),
 });
+
+const tripParams = z.object({
+  tripId: z.string().regex(/^[A-Za-z0-9_-]{5,120}$/, 'Invalid trip'),
+});
+
+export function busRoutes(
+  c: ReturnType<typeof createBusesController>,
+  authenticate: RequestHandler,
+  rbac: RbacService,
+): Router {
+  const router = Router();
+  router.get('/search', c.search);
+  router.post(
+    '/book',
+    authenticate,
+    authorize(rbac, Permission.BOOKING_CREATE),
+    requireIdempotencyKey,
+    validate({ body: bookBusSchema }),
+    c.book,
+  );
+  router.get('/:tripId', validate({ params: tripParams }), c.trip);
+  router.get('/:tripId/seats', validate({ params: tripParams }), c.seats);
+  return router;
+}
 
 export function flightRoutes(
   c: ReturnType<typeof createFlightsController>,

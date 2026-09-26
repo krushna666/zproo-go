@@ -13,31 +13,6 @@ export interface PlannedRoute {
 }
 
 export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
-  // Buses — Phase 5
-  {
-    path: '/buses',
-    title: 'Buses',
-    description: 'AC, sleeper, seater, Volvo and electric buses.',
-    phase: 5,
-  },
-  {
-    path: '/buses/results',
-    title: 'Bus results',
-    description: 'Operators, ratings, amenities and live seat counts.',
-    phase: 5,
-  },
-  {
-    path: '/buses/:id',
-    title: 'Bus details',
-    description: 'Route, amenities, boarding and dropping points.',
-    phase: 5,
-  },
-  {
-    path: '/buses/:id/seats',
-    title: 'Choose seats',
-    description: 'Pick window, aisle or ladies seats.',
-    phase: 5,
-  },
   // Trains — Phase 6
   { path: '/trains', title: 'Trains', description: 'Search trains across all classes.', phase: 6 },
   {

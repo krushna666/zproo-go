@@ -1,5 +1,5 @@
 import { BRAND } from '@zproo/config';
-import type { BookingDetails, FlightOffer } from '@zproo/types';
+import type { BookingDetails, BusBookingInfo, FlightOffer } from '@zproo/types';
 import PDFDocument from 'pdfkit';
 
 const RED = BRAND.colors.primary;
@@ -31,8 +31,12 @@ const duration = (minutes: number) =>
 export class TicketService {
   constructor(private readonly logoPath: string | undefined) {}
 
-  /** Flight e-ticket. Demo bookings carry a watermark so they can never pass as a real ticket. */
-  flightTicket(booking: BookingDetails, options: { demo: boolean }): Promise<Buffer> {
+  /**
+   * Flight or bus e-ticket. Demo bookings carry a watermark so they can never pass as a real
+   * ticket.
+   */
+  ticket(booking: BookingDetails, options: { demo: boolean }): Promise<Buffer> {
+    const bus = booking.bus;
     const doc = new PDFDocument({
       size: 'A4',
       margin: 40,
@@ -86,7 +90,7 @@ export class TicketService {
         .fontSize(9)
         .fillColor('#92400E')
         .text(
-          'Demo booking from the development flight provider — not valid for travel.',
+          `Demo booking from the development ${bus ? 'bus' : 'flight'} provider — not valid for travel.`,
           left + 10,
           y + 9,
         );
@@ -120,31 +124,56 @@ export class TicketService {
 
     for (const leg of booking.flights)
       y = this.flightBlock(doc, leg.offer, leg.pnr, y, left, width);
+    if (bus) y = this.busBlock(doc, bus, y, left, width);
 
     // Passengers
     y = this.heading(doc, 'Travellers', y, left);
     doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED);
-    doc
-      .text('#', left, y)
-      .text('NAME', left + 24, y)
-      .text('TYPE', left + 250, y)
-      .text('E-TICKET NUMBER(S)', left + 330, y);
-    y += 16;
-    booking.passengers.forEach((p, i) => {
-      const tickets = booking.flights
-        .map((f) => f.tickets.find((t) => t.passengerId === p.id)?.ticketNumber)
-        .filter(Boolean)
-        .join(', ');
-      doc.font('Helvetica').fontSize(10).fillColor(DARK);
+    if (bus) {
       doc
-        .text(String(i + 1), left, y)
-        .text(`${p.title} ${p.firstName} ${p.lastName}`, left + 24, y, { width: 220 });
+        .text('#', left, y)
+        .text('NAME', left + 24, y)
+        .text('AGE / GENDER', left + 250, y)
+        .text('SEAT', left + 380, y);
+      y += 16;
+      booking.passengers.forEach((p, i) => {
+        doc.font('Helvetica').fontSize(10).fillColor(DARK);
+        doc
+          .text(String(i + 1), left, y)
+          .text(`${p.firstName} ${p.lastName}`, left + 24, y, { width: 220 })
+          .text(
+            `${p.age ?? '-'} / ${p.gender.charAt(0) + p.gender.slice(1).toLowerCase()}`,
+            left + 250,
+            y,
+          )
+          .font('Helvetica-Bold')
+          .text(p.seatNumber ?? '-', left + 380, y);
+        y += 18;
+      });
+      y += 8;
+    } else {
       doc
-        .text(p.type.charAt(0) + p.type.slice(1).toLowerCase(), left + 250, y)
-        .text(tickets || 'Pending', left + 330, y, { width: width - 330 });
-      y += 18;
-    });
-    y += 8;
+        .text('#', left, y)
+        .text('NAME', left + 24, y)
+        .text('TYPE', left + 250, y)
+        .text('E-TICKET NUMBER(S)', left + 330, y);
+      y += 16;
+      booking.passengers.forEach((p, i) => {
+        const tickets = booking.flights
+          .map((f) => f.tickets.find((t) => t.passengerId === p.id)?.ticketNumber)
+          .filter(Boolean)
+          .join(', ');
+        doc.font('Helvetica').fontSize(10).fillColor(DARK);
+        doc
+          .text(String(i + 1), left, y)
+          .text(`${p.title} ${p.firstName} ${p.lastName}`, left + 24, y, { width: 220 });
+        doc
+          .text(p.type.charAt(0) + p.type.slice(1).toLowerCase(), left + 250, y)
+          .text(tickets || 'Pending', left + 330, y, { width: width - 330 });
+        y += 18;
+      });
+      y += 8;
+    }
 
     // Fare
     y = this.heading(doc, 'Fare summary', y, left);
@@ -173,11 +202,23 @@ export class TicketService {
 
     // Important information
     y = this.heading(doc, 'Important information', y, left);
-    const notes = [
-      'Carry a valid government photo ID (passport for international travel). Names must match the ID.',
-      'Check-in closes 45 minutes before departure for domestic flights and 60 minutes for international flights.',
-      'Cancellations and changes follow the airline fare rules shown at booking. Manage your booking in My Bookings.',
-    ];
+    const notes = bus
+      ? [
+          'Reach your boarding point 15 minutes before the time shown. Buses do not wait for late passengers.',
+          'Carry a government photo ID; the operator may check it against the traveller names.',
+          `Cancellation: ${bus.offer.cancellationPolicy
+            .map((r) =>
+              r.hoursBefore > 0
+                ? `${r.refundPercent}% refund more than ${r.hoursBefore}h before departure`
+                : 'no refund after that',
+            )
+            .join('; ')}.`,
+        ]
+      : [
+          'Carry a valid government photo ID (passport for international travel). Names must match the ID.',
+          'Check-in closes 45 minutes before departure for domestic flights and 60 minutes for international flights.',
+          'Cancellations and changes follow the airline fare rules shown at booking. Manage your booking in My Bookings.',
+        ];
     doc.font('Helvetica').fontSize(9).fillColor(DARK);
     for (const note of notes) {
       doc.text(`•  ${note}`, left, y, { width });
@@ -194,6 +235,78 @@ export class TicketService {
       });
     doc.end();
     return done;
+  }
+
+  private busBlock(
+    doc: PDFKit.PDFDocument,
+    bus: BusBookingInfo,
+    y: number,
+    left: number,
+    width: number,
+  ): number {
+    const { offer } = bus;
+    const tz = 'Asia/Kolkata';
+    const height = 150;
+    doc.roundedRect(left, y, width, height, 8).lineWidth(1).strokeColor(BORDER).stroke();
+    const x = left + 16;
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(12)
+      .fillColor(DARK)
+      .text(`${offer.operator.name}  ·  ${offer.serviceNumber}`, x, y + 14);
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .fillColor(RED)
+      .text(bus.pnr ? `PNR ${bus.pnr}` : 'PNR pending', x, y + 14, {
+        width: width - 32,
+        align: 'right',
+      });
+    doc
+      .font('Helvetica')
+      .fontSize(9)
+      .fillColor(MUTED)
+      .text(`${date(offer.departureAt, tz)}  ·  ${offer.bus.name}`, x, y + 30);
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(20)
+      .fillColor(DARK)
+      .text(time(bus.boardingPoint.time, tz), x, y + 48)
+      .text(time(bus.droppingPoint.time, tz), x, y + 48, { width: width - 32, align: 'right' });
+    doc
+      .font('Helvetica')
+      .fontSize(9)
+      .fillColor(MUTED)
+      .text(`${duration(offer.durationMinutes)}  ·  ${offer.distanceKm} km`, x, y + 56, {
+        width: width - 32,
+        align: 'center',
+      });
+    const half = (width - 32) / 2;
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .fillColor(DARK)
+      .text(`${offer.from.name} · ${bus.boardingPoint.name}`, x, y + 76, { width: half })
+      .text(`${offer.to.name} · ${bus.droppingPoint.name}`, x + half, y + 76, {
+        width: half,
+        align: 'right',
+      });
+    doc
+      .font('Helvetica')
+      .fontSize(8)
+      .fillColor(MUTED)
+      .text(bus.boardingPoint.address, x, y + 90, { width: half - 10 })
+      .text(bus.droppingPoint.address, x + half + 10, y + 90, { width: half - 10, align: 'right' });
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .fillColor(DARK)
+      .text(
+        `Seat${bus.seatNumbers.length === 1 ? '' : 's'}: ${bus.seatNumbers.join(', ')}`,
+        x,
+        y + 124,
+      );
+    return y + height + 16;
   }
 
   private heading(doc: PDFKit.PDFDocument, text: string, y: number, left: number): number {

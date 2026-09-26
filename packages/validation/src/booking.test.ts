@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ageOn,
+  bookBusSchema,
   bookFlightSchema,
   passengerAgeIssues,
   passengerSchema,
@@ -65,5 +66,45 @@ describe('bookFlightSchema', () => {
       expectedTotalPaise: 532000,
     });
     expect(parsed.contact).toEqual({ email: 'amit@example.com', phone: '+919876543210' });
+  });
+});
+
+describe('bookBusSchema', () => {
+  const valid = {
+    tripId: 'bs_abc123_20261010',
+    boardingPointId: 'p1',
+    droppingPointId: 'p2',
+    passengers: [
+      { seatNumber: 'L4', firstName: 'Amit', lastName: 'Sharma', age: '34', gender: 'MALE' },
+    ],
+    contact: { email: 'Amit@Example.com', phone: '98765 43210' },
+    expectedTotalPaise: 47_300,
+  };
+
+  it('accepts a booking and normalises age, email and phone', () => {
+    const parsed = bookBusSchema.parse(valid);
+    expect(parsed.passengers[0]?.age).toBe(34);
+    expect(parsed.contact).toEqual({ email: 'amit@example.com', phone: '+919876543210' });
+  });
+
+  it('allows at most six seats and one traveller per seat', () => {
+    const seat = valid.passengers[0] as (typeof valid.passengers)[number];
+    const seven = Array.from({ length: 7 }, (_, i) => ({ ...seat, seatNumber: `L${i + 1}` }));
+    expect(bookBusSchema.safeParse({ ...valid, passengers: seven }).success).toBe(false);
+    const dup = bookBusSchema.safeParse({
+      ...valid,
+      passengers: [seat, { ...seat, firstName: 'Priya' }],
+    });
+    expect(dup.success).toBe(false);
+    expect(dup.error?.issues[0]).toMatchObject({ path: ['passengers', 1, 'seatNumber'] });
+  });
+
+  it('requires a sensible age', () => {
+    const seat = valid.passengers[0] as (typeof valid.passengers)[number];
+    for (const age of ['0', '121', '3.5', '']) {
+      expect(bookBusSchema.safeParse({ ...valid, passengers: [{ ...seat, age }] }).success).toBe(
+        false,
+      );
+    }
   });
 });

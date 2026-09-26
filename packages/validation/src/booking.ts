@@ -91,3 +91,49 @@ export const bookFlightSchema = z.object({
   expectedTotalPaise: z.number().int().positive(),
 });
 export type BookFlightInput = z.output<typeof bookFlightSchema>;
+
+// ───────────────────────────── Buses ─────────────────────────────
+
+export const MAX_BUS_SEATS = 6;
+
+export const busPassengerSchema = z.object({
+  seatNumber: z.string().trim().min(1).max(8),
+  firstName: travellerName('first name'),
+  lastName: travellerName('last name'),
+  age: z.coerce
+    .number({ message: 'Enter age' })
+    .int('Enter age in whole years')
+    .min(1, 'Enter age')
+    .max(120, 'Enter a valid age'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
+});
+export type BusPassengerInput = z.output<typeof busPassengerSchema>;
+
+export const bookBusSchema = z
+  .object({
+    tripId: z.string().min(5).max(200),
+    boardingPointId: z.string().min(1).max(64),
+    droppingPointId: z.string().min(1).max(64),
+    /** One traveller per seat */
+    passengers: z
+      .array(busPassengerSchema)
+      .min(1)
+      .max(MAX_BUS_SEATS, `Up to ${MAX_BUS_SEATS} seats per booking`),
+    contact: contactSchema,
+    /** The total the customer saw; if the price moved, the API refuses with PRICE_CHANGED. */
+    expectedTotalPaise: z.number().int().positive(),
+  })
+  .superRefine((b, ctx) => {
+    const seen = new Set<string>();
+    b.passengers.forEach((p, i) => {
+      if (seen.has(p.seatNumber)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['passengers', i, 'seatNumber'],
+          message: 'Each traveller needs their own seat',
+        });
+      }
+      seen.add(p.seatNumber);
+    });
+  });
+export type BookBusInput = z.output<typeof bookBusSchema>;

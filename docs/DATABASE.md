@@ -60,6 +60,22 @@ those fields so the number can be registered again.
 | `flight_bookings`    | One per flight leg: offer snapshot (JSON, what the customer saw), PNR, ticket numbers, seats held                                     |
 | `payments`           | Gateway orders and results; unique `provider_order_id` / `provider_payment_id`                                                        |
 
+## Phase 5 schema (buses)
+
+| Table               | Purpose                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `bus_operators`     | Operator code, name and rating                                                                                            |
+| `buses`             | A coach: type (seater, sleeper, seater/sleeper), A/C, electric, amenities                                                 |
+| `bus_seats`         | Seat layout: number, deck, row, column, kind, seat premium (`fare_percent`), ladies-only                                  |
+| `bus_routes`        | City pair (city codes from `@zproo/config`) and distance                                                                  |
+| `bus_route_points`  | Boarding points (minutes after departure) and dropping points (minutes before arrival)                                    |
+| `bus_schedules`     | A regular service: coach × route × departure time × weekdays, base fare                                                   |
+| `bus_trips`         | One departure of a schedule on a date, created on first booking                                                           |
+| `bus_seat_bookings` | Seats held or sold. **Unique `(trip_id, seat_id)`** makes double-booking impossible; rows are deleted when a hold expires |
+| `bus_bookings`      | The bus journey of a booking: trip snapshot, chosen points, seat numbers, operator PNR                                    |
+
+`booking_passengers` gains `age` and `seat_number` (buses ask for age and assign a seat per traveller).
+
 Booking lifecycle: `PENDING_PAYMENT` (seats held) → `CONFIRMED` on verified payment, or `CANCELLED`
 (`HOLD_EXPIRED`) when the hold runs out and the seats are released. Every transition is a
 conditional update on the current status, so concurrent requests and API instances cannot apply
@@ -83,6 +99,13 @@ every district headquarters and popular hill stations, beaches and pilgrimage to
 stations (38 in Maharashtra). Former names (Aurangabad, Ahmednagar, Osmanabad, Bombay…) are
 searchable.
 
+- **Bus network** (development/test; the mock provider only): 8 fictional operators (Sahyadri
+  Skyline, Deccan Dhruv Tours, Konkan Kinara Travels, …), 6 coach types (Volvo A/C sleeper, A/C
+  seater/sleeper, Volvo semi-sleeper, electric A/C seater, non-A/C sleeper and seater) and 458
+  services on 80 routes. Maharashtra first: Pune and Mumbai to Nashik, Kolhapur, Satara, Shirdi,
+  Sambhajinagar, Solapur, Nagpur, Konkan, Mahabaleshwar and more, plus Nagpur–Amravati,
+  Kolhapur–Goa and the main interstate corridors. Boarding points are real localities (Swargate,
+  Shivajinagar, Wakad, Dadar, Vashi, Panvel…).
 - **Demo users** (skipped when `NODE_ENV=production`): 100 users with deterministic Indian names,
   one account per staff role, customers, and some saved addresses. **No passwords are stored.**
   Sign in with mobile OTP; in development the code is shown on screen.

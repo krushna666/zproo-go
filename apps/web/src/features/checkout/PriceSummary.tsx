@@ -1,7 +1,7 @@
 import type { PriceBreakdown } from '@zproo/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@zproo/ui';
 import { ShieldCheck } from 'lucide-react';
-import { inr } from '../format';
+import { formatMoney as inr } from '@zproo/utils';
 
 /** Fare breakdown. All taxes are shown up front; there are no convenience fees. */
 export function PriceSummary({

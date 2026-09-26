@@ -26,7 +26,7 @@ import { Seo } from '@/components/seo/Seo';
 import { FormAlert } from '@/features/auth/components/FormAlert';
 import { errorMessage } from '@/features/auth/errors';
 import { useFlightSearch } from '@/features/flights/api';
-import { DemoBanner } from '@/features/flights/components/DemoBanner';
+import { DemoBanner } from '@/features/checkout/DemoBanner';
 import { FiltersPanel } from '@/features/flights/components/FiltersPanel';
 import { FlightCard } from '@/features/flights/components/FlightCard';
 import { useFlightDraft } from '@/features/flights/draft';

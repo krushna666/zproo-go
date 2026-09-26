@@ -19,9 +19,9 @@ import { PhoneInput } from '@/features/auth/components/PhoneInput';
 import { errorMessage } from '@/features/auth/errors';
 import { useAuthStore } from '@/features/auth/store';
 import { useItineraryOffers } from '@/features/flights/api';
-import { CheckoutShell, NoFlightSelected } from '@/features/flights/components/CheckoutShell';
+import { CheckoutShell, NothingSelected } from '@/features/checkout/CheckoutShell';
 import { ItinerarySummary } from '@/features/flights/components/ItinerarySummary';
-import { PriceSummary } from '@/features/flights/components/PriceSummary';
+import { PriceSummary } from '@/features/checkout/PriceSummary';
 import { useFlightDraft, type Itinerary } from '@/features/flights/draft';
 import { departureDate, travelDate as formatDate } from '@/features/flights/format';
 
@@ -64,7 +64,7 @@ function blankPassengers(pax: PaxCounts): PassengerInput[] {
 
 export default function FlightTravellersPage() {
   const itinerary = useFlightDraft((s) => s.itinerary);
-  if (!itinerary) return <NoFlightSelected />;
+  if (!itinerary) return <NothingSelected />;
   return <Travellers itinerary={itinerary} />;
 }
 

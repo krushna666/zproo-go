@@ -3,6 +3,7 @@ import { BookingStatus, CabinClass, PaymentStatus } from '@zproo/types';
 import { z } from 'zod';
 import { offerQuerySchema } from '../../controllers/flights.controller';
 import { ErrorResponse, registry, successEnvelope } from '../openapi';
+import { BusBookingInfo } from './buses';
 
 const bearer = [{ bearerAuth: [] }];
 const json = (schema: z.ZodType) => ({ 'application/json': { schema } });
@@ -96,7 +97,7 @@ const BookingDetails = registry.register(
   'BookingDetails',
   z.object({
     reference: z.string().openapi({ example: 'ZP-2026-7K4Q2M' }),
-    serviceType: z.literal('FLIGHT'),
+    serviceType: z.enum(['FLIGHT', 'BUS']),
     status: z.enum(Object.values(BookingStatus) as [string, ...string[]]),
     paymentStatus: z.enum(Object.values(PaymentStatus) as [string, ...string[]]),
     createdAt: z.iso.datetime(),
@@ -121,6 +122,10 @@ const BookingDetails = registry.register(
         title: z.string(),
         firstName: z.string(),
         lastName: z.string(),
+        dateOfBirth: z.string().nullable(),
+        age: z.number().int().nullable(),
+        gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
+        seatNumber: z.string().nullable(),
       }),
     ),
     flights: z.array(
@@ -131,6 +136,7 @@ const BookingDetails = registry.register(
         tickets: z.array(z.object({ passengerId: z.string(), ticketNumber: z.string() })),
       }),
     ),
+    bus: BusBookingInfo.nullable(),
   }),
 );
 

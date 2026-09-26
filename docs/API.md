@@ -43,6 +43,7 @@ well-formed `X-Request-Id` (8–128 chars of `A-Z a-z 0-9 . _ -`) to correlate a
 | 409  | `OFFER_EXPIRED`           | The fare is no longer sold; search again                        |
 | 409  | `PRICE_CHANGED`           | Fare differs from `expectedTotalPaise` (new total in `details`) |
 | 409  | `SOLD_OUT`                | Not enough seats left to hold                                   |
+| 409  | `SEAT_UNAVAILABLE`        | A chosen bus seat was taken by someone else                     |
 | 409  | `BOOKING_EXPIRED`         | Seat hold ran out before payment completed                      |
 | 409  | `INVALID_STATE`           | Action not allowed in the booking's current status              |
 | 402  | `PAYMENT_ERROR`           | Payment failed or could not be verified                         |
@@ -127,6 +128,21 @@ The server re-prices every offer; if the total differs it answers `409 PRICE_CHA
 held. Retrying with the same `Idempotency-Key` returns the original booking. Seats are held for
 `BOOKING_HOLD_MINUTES`; unpaid bookings are then cancelled and the seats released (a job runs every
 minute on each API instance; the state change is conditional, so instances never double-release).
+
+### Buses (Phase 5)
+
+| Method | Path                        | Auth             | Description                                                                                     |
+| ------ | --------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| GET    | `/api/buses/search`         | —                | `from`, `to` (city codes, e.g. `pune`, `mumbai`), `date`. Departures in time order. Cached 60 s |
+| GET    | `/api/buses/{tripId}`       | —                | Operator, coach, amenities, boarding/dropping points with times, cancellation policy            |
+| GET    | `/api/buses/{tripId}/seats` | —                | Seat layout per deck with live availability and per-seat price incl. GST (never cached)         |
+| POST   | `/api/buses/book`           | `booking:create` | Holds the seats and creates a `PENDING_PAYMENT` booking. **Requires `Idempotency-Key`**         |
+
+`POST /api/buses/book` body: `{ tripId, boardingPointId, droppingPointId, passengers: [{ seatNumber, firstName, lastName, age, gender }], contact, expectedTotalPaise }`.
+One traveller per seat, up to 6. Ladies-only seats need a female traveller (`400` otherwise). The
+server re-prices the seats (`409 PRICE_CHANGED`) and holds them atomically (`409 SEAT_UNAVAILABLE`
+if any was taken). Payment, tickets (`/bookings/{reference}/ticket.pdf`) and hold expiry work exactly
+as for flights; booking details carry a `bus` object instead of `flights`.
 
 ### Bookings
 

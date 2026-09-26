@@ -34,7 +34,7 @@ export function createBookingsController(
     }
     const details = await bookings.getDetails(reference, await viewer(req));
     const demo = Boolean((record.metadata as { demo?: boolean } | null)?.demo);
-    const pdf = await tickets.flightTicket(details, { demo });
+    const pdf = await tickets.ticket(details, { demo });
     res
       .status(200)
       .type('application/pdf')

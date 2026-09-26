@@ -2,60 +2,71 @@ import { useMutation } from '@tanstack/react-query';
 import type { BookingDetails } from '@zproo/types';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@zproo/ui';
 import { CircleCheck, Download, Home, Mail } from 'lucide-react';
-import { Link, Navigate, useSearchParams } from 'react-router';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router';
 import { FormAlert } from '@/features/auth/components/FormAlert';
 import { errorMessage } from '@/features/auth/errors';
-import { flightsApi, useBooking } from '@/features/flights/api';
-import { CheckoutShell } from '@/features/flights/components/CheckoutShell';
-import { DemoBanner } from '@/features/flights/components/DemoBanner';
-import { ItinerarySummary } from '@/features/flights/components/ItinerarySummary';
-import { PriceSummary } from '@/features/flights/components/PriceSummary';
-import { paymentUrl } from '@/features/flights/links';
+import { checkoutApi, useBooking } from '@/features/checkout/api';
+import { CHECKOUT_STEP, type CheckoutService } from '@/features/checkout/steps';
+import { paymentUrl, searchHome, serviceOf } from '@/features/checkout/links';
+import { TripSummary } from '@/features/checkout/TripSummary';
+import { CheckoutShell } from '@/features/checkout/CheckoutShell';
+import { DemoBanner } from '@/features/checkout/DemoBanner';
+import { PriceSummary } from '@/features/checkout/PriceSummary';
 
 const TITLE = { MR: 'Mr', MRS: 'Mrs', MS: 'Ms', MSTR: 'Master', MISS: 'Miss' } as Record<
   string,
   string
 >;
 
-export default function FlightConfirmationPage() {
+/** Confirmation for any booking (flights and buses), at /flights/… and /buses/confirmation. */
+export default function ConfirmationPage() {
   const [params] = useSearchParams();
+  const service: CheckoutService = useLocation().pathname.startsWith('/buses') ? 'bus' : 'flight';
+  const step = CHECKOUT_STEP[service].done;
   const reference = params.get('ref');
   // Tickets are issued just after payment; poll briefly until the PNR appears.
   const { data: booking, isPending, error } = useBooking(reference, { poll: true });
-  if (!reference) return <Navigate to="/flights" replace />;
+  if (!reference) return <Navigate to={searchHome(service)} replace />;
   if (isPending) {
     return (
-      <CheckoutShell step={4} title="Booking confirmed">
+      <CheckoutShell step={step} service={service} title="Booking confirmed">
         <Skeleton className="h-72 rounded-2xl" />
       </CheckoutShell>
     );
   }
   if (error || !booking) {
     return (
-      <CheckoutShell step={4} title="Booking">
+      <CheckoutShell step={step} service={service} title="Booking">
         <FormAlert>{errorMessage(error)}</FormAlert>
       </CheckoutShell>
     );
   }
   if (booking.status === 'PENDING_PAYMENT')
-    return <Navigate to={paymentUrl(booking.reference)} replace />;
+    return <Navigate to={paymentUrl(serviceOf(booking), booking.reference)} replace />;
   return <Confirmation booking={booking} />;
 }
 
 function Confirmation({ booking }: { booking: BookingDetails }) {
-  const download = useMutation({ mutationFn: () => flightsApi.downloadTicket(booking.reference) });
+  const service = serviceOf(booking);
+  const step = CHECKOUT_STEP[service].done;
+  const download = useMutation({ mutationFn: () => checkoutApi.downloadTicket(booking.reference) });
   const confirmed = booking.status === 'CONFIRMED' || booking.status === 'COMPLETED';
-  const ticketsIssued = booking.flights.every((f) => f.pnr);
+  const ticketsIssued = booking.bus
+    ? Boolean(booking.bus.pnr)
+    : booking.flights.every((f) => f.pnr);
+  const demo = booking.bus
+    ? booking.bus.offer.provider === 'mock'
+    : booking.flights.some((f) => f.offer.provider === 'mock');
 
   if (!confirmed) {
     return (
-      <CheckoutShell step={4} title="Booking not confirmed">
+      <CheckoutShell step={step} service={service} title="Booking not confirmed">
         <FormAlert>
           Booking {booking.reference} is {booking.status.toLowerCase().replace('_', ' ')}. If money
           was debited, it will be refunded to the original payment method.
         </FormAlert>
         <Button asChild>
-          <Link to="/flights">Search flights</Link>
+          <Link to={searchHome(service)}>Search again</Link>
         </Button>
       </CheckoutShell>
     );
@@ -63,7 +74,8 @@ function Confirmation({ booking }: { booking: BookingDetails }) {
 
   return (
     <CheckoutShell
-      step={4}
+      step={step}
+      service={service}
       title="Booking confirmed"
       aside={
         <>
@@ -89,7 +101,7 @@ function Confirmation({ booking }: { booking: BookingDetails }) {
           </p>
         </div>
       </div>
-      {booking.flights.some((f) => f.offer.provider === 'mock') && <DemoBanner />}
+      {demo && <DemoBanner service={service} />}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button
@@ -100,28 +112,43 @@ function Confirmation({ booking }: { booking: BookingDetails }) {
           <Download aria-hidden /> {download.isPending ? 'Preparing…' : 'Download e-ticket'}
         </Button>
         {!ticketsIssued && (
-          <span className="text-sm text-muted">Issuing tickets with the airline…</span>
+          <span className="text-sm text-muted">
+            Issuing tickets with the {service === 'bus' ? 'operator' : 'airline'}…
+          </span>
         )}
       </div>
       {download.error && <FormAlert>{errorMessage(download.error)}</FormAlert>}
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Airline PNR</CardTitle>
+          <CardTitle className="text-base">
+            {booking.bus ? 'Operator PNR' : 'Airline PNR'}
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          {booking.flights.map((f) => (
-            <div key={f.sequence} className="rounded-xl border border-border px-4 py-2">
+          {booking.bus ? (
+            <div className="rounded-xl border border-border px-4 py-2">
               <p className="text-xs text-muted">
-                {f.offer.from.code} → {f.offer.to.code} · {f.offer.flightNumber}
+                {booking.bus.offer.operator.name} · {booking.bus.offer.serviceNumber}
               </p>
-              <p className="font-mono text-lg font-bold tracking-widest">{f.pnr ?? '······'}</p>
+              <p className="font-mono text-lg font-bold tracking-widest">
+                {booking.bus.pnr ?? '·········'}
+              </p>
             </div>
-          ))}
+          ) : (
+            booking.flights.map((f) => (
+              <div key={f.sequence} className="rounded-xl border border-border px-4 py-2">
+                <p className="text-xs text-muted">
+                  {f.offer.from.code} → {f.offer.to.code} · {f.offer.flightNumber}
+                </p>
+                <p className="font-mono text-lg font-bold tracking-widest">{f.pnr ?? '······'}</p>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
-      <ItinerarySummary offers={booking.flights.map((f) => f.offer)} detailed />
+      <TripSummary booking={booking} detailed />
 
       <Card>
         <CardHeader className="pb-3">
@@ -130,15 +157,17 @@ function Confirmation({ booking }: { booking: BookingDetails }) {
         <CardContent>
           <ol className="divide-y divide-border text-sm">
             {booking.passengers.map((p) => {
-              const tickets = booking.flights
-                .map((f) => f.tickets.find((t) => t.passengerId === p.id)?.ticketNumber)
-                .filter(Boolean);
+              const tickets = p.seatNumber
+                ? [`Seat ${p.seatNumber}`]
+                : booking.flights
+                    .map((f) => f.tickets.find((t) => t.passengerId === p.id)?.ticketNumber)
+                    .filter(Boolean);
               return (
                 <li key={p.id} className="flex flex-wrap justify-between gap-2 py-2">
                   <span className="font-semibold">
                     {TITLE[p.title] ?? p.title} {p.firstName} {p.lastName}{' '}
                     <Badge variant="outline" className="ml-1">
-                      {p.type.toLowerCase()}
+                      {p.age !== null ? `${p.age} yrs` : p.type.toLowerCase()}
                     </Badge>
                   </span>
                   <span className="font-mono text-xs text-muted">

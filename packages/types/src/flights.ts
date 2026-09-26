@@ -1,3 +1,4 @@
+import type { BusBookingInfo } from './buses';
 import type { BookingStatus, CabinClass, PaymentStatus } from './enums';
 
 export interface AirportInfo {
@@ -103,7 +104,11 @@ export interface BookingPassengerInfo {
   firstName: string;
   lastName: string;
   dateOfBirth: string | null;
+  /** Age on the travel date, where the service asks for age (buses) */
+  age: number | null;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
+  /** Seat assigned to this traveller (buses) */
+  seatNumber: string | null;
 }
 
 export interface FlightBookingLeg {
@@ -115,7 +120,7 @@ export interface FlightBookingLeg {
 
 export interface BookingDetails {
   reference: string;
-  serviceType: 'FLIGHT';
+  serviceType: 'FLIGHT' | 'BUS';
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   createdAt: string;
@@ -126,7 +131,10 @@ export interface BookingDetails {
   price: PriceBreakdown;
   contact: { email: string; phone: string };
   passengers: BookingPassengerInfo[];
+  /** Flight legs (flight bookings; empty otherwise) */
   flights: FlightBookingLeg[];
+  /** Bus journey (bus bookings; null otherwise) */
+  bus: BusBookingInfo | null;
 }
 
 export interface BookingListItem {

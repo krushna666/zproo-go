@@ -61,6 +61,21 @@ describe('parseEnv', () => {
     );
   });
 
+  it.each(['FLIGHT_PROVIDER', 'BUS_PROVIDER', 'PAYMENT_PROVIDER'])(
+    'refuses the mock %s in production',
+    (key) => {
+      const prod = {
+        ...baseEnv,
+        NODE_ENV: 'production',
+        JWT_SECRET: secret,
+        JWT_REFRESH_SECRET: otherSecret,
+      };
+      expect(() => parseEnv(prod)).toThrow(
+        new RegExp(`${key}: mock provider is not allowed in production`),
+      );
+    },
+  );
+
   it('generates throwaway secrets outside production and flags it', () => {
     const env = parseEnv({ ...baseEnv, NODE_ENV: 'development' });
     expect(env.ephemeralSecrets).toBe(true);

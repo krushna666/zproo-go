@@ -294,3 +294,12 @@ export function flightSearchInputFromParams(params: { get(name: string): string 
     cabin: params.get('cabin') ?? 'ECONOMY',
   };
 }
+
+/** Raw bus search input from URL query parameters (web results page and GET /api/buses/search). */
+export function busSearchInputFromParams(params: { get(name: string): string | null }) {
+  return {
+    from: params.get('from') ?? '',
+    to: params.get('to') ?? '',
+    date: params.get('date') ?? addDays(todayIso(), DEFAULT_LEAD_DAYS.bus),
+  };
+}

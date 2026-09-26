@@ -17,7 +17,7 @@ describe('routing', () => {
 
   it.each([
     ['/trains', 'Trains', 6],
-    ['/buses/abc/seats', 'Choose seats', 5],
+    ['/hotels/results', 'Hotel results', 7],
     ['/offers', 'Offers', 13],
   ])('renders the planned page for %s', async (path, title, phase) => {
     renderRoute(path);
@@ -63,7 +63,7 @@ describe('routing', () => {
       screen.getByRole('textbox', { name: /search services and pages/i }),
       'bus{Enter}',
     );
-    await screen.findByRole('heading', { level: 1, name: 'Buses' });
+    await screen.findByRole('heading', { level: 1, name: 'Book bus tickets' });
     expect(router.state.location.pathname).toBe('/buses');
   });
 });

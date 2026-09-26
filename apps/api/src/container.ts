@@ -3,6 +3,7 @@ import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
 import type { Env } from './config/env';
 import { resolveLogoPath } from './config/brand';
+import { createBusProvider, type BusProvider } from './providers/bus';
 import { createEmailProvider, type EmailProvider } from './providers/email';
 import { createFlightProvider, type FlightProvider } from './providers/flight';
 import { createPaymentProvider, type PaymentProvider } from './providers/payment';
@@ -17,6 +18,7 @@ import { UserRepository } from './repositories/user.repository';
 import { AuditService } from './services/audit.service';
 import { AuthService } from './services/auth.service';
 import { BookingService } from './services/booking.service';
+import { BusService } from './services/bus.service';
 import { CacheService } from './services/cache.service';
 import { FlightService } from './services/flight.service';
 import { PaymentService } from './services/payment.service';
@@ -33,6 +35,7 @@ export interface Providers {
   email: EmailProvider;
   identityVerifiers: IdentityVerifiers;
   flights: FlightProvider;
+  buses: BusProvider;
   payments: PaymentProvider;
 }
 
@@ -62,6 +65,7 @@ export function createServices({
   const email = providers.email ?? createEmailProvider(env);
   const identityVerifiers = providers.identityVerifiers ?? createIdentityVerifiers(env);
   const flightProvider = providers.flights ?? createFlightProvider(env, prisma);
+  const busProvider = providers.buses ?? createBusProvider(env, prisma);
   const paymentProvider = providers.payments ?? createPaymentProvider(env);
 
   const users = new UserRepository(prisma);
@@ -78,6 +82,7 @@ export function createServices({
   const bookings = new BookingService({
     prisma,
     flights: flightProvider,
+    buses: busProvider,
     audit,
     logger,
     holdMinutes: env.BOOKING_HOLD_MINUTES,
@@ -103,11 +108,13 @@ export function createServices({
     }),
     users: new UserService(users, rbac, audit),
     flights: new FlightService(flightProvider, new CacheService(redis, logger)),
+    buses: new BusService(busProvider, new CacheService(redis, logger)),
     bookings,
     payments: new PaymentService({
       prisma,
       provider: paymentProvider,
       flights: flightProvider,
+      buses: busProvider,
       bookings,
       audit,
       logger,

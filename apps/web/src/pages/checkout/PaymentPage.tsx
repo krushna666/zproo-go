@@ -3,16 +3,18 @@ import type { BookingDetails, PaymentOrder } from '@zproo/types';
 import { Button, Card, CardContent, CardHeader, CardTitle, cn, Skeleton } from '@zproo/ui';
 import { Building2, CreditCard, Lock, Smartphone, Timer, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router';
 import { FormAlert } from '@/features/auth/components/FormAlert';
 import { errorMessage } from '@/features/auth/errors';
-import { flightKeys, flightsApi, useBooking } from '@/features/flights/api';
-import { CheckoutShell } from '@/features/flights/components/CheckoutShell';
-import { ItinerarySummary } from '@/features/flights/components/ItinerarySummary';
-import { PriceSummary } from '@/features/flights/components/PriceSummary';
+import { useBusDraft } from '@/features/buses/draft';
+import { bookingKeys, checkoutApi, useBooking } from '@/features/checkout/api';
+import { CHECKOUT_STEP, type CheckoutService } from '@/features/checkout/steps';
+import { confirmationUrl, searchHome, serviceOf } from '@/features/checkout/links';
+import { TripSummary } from '@/features/checkout/TripSummary';
+import { CheckoutShell } from '@/features/checkout/CheckoutShell';
+import { PriceSummary } from '@/features/checkout/PriceSummary';
 import { useFlightDraft } from '@/features/flights/draft';
 import { inr } from '@/features/flights/format';
-import { confirmationUrl } from '@/features/flights/links';
 import { useCountdown } from '@/hooks/useCountdown';
 
 const METHODS = [
@@ -22,43 +24,49 @@ const METHODS = [
   { id: 'wallet', label: 'Wallet', hint: 'ZPROO Wallet and others', icon: Wallet },
 ] as const;
 
-export default function FlightPaymentPage() {
+/** Payment for any booking (flights and buses), at /flights/payment and /buses/payment. */
+export default function PaymentPage() {
   const [params] = useSearchParams();
-  const draftReference = useFlightDraft((s) => s.reference);
-  const reference = params.get('ref') ?? draftReference;
+  const service: CheckoutService = useLocation().pathname.startsWith('/buses') ? 'bus' : 'flight';
+  const flightReference = useFlightDraft((s) => s.reference);
+  const busReference = useBusDraft((s) => s.reference);
+  const reference = params.get('ref') ?? (service === 'bus' ? busReference : flightReference);
   const { data: booking, isPending, error } = useBooking(reference);
+  const step = CHECKOUT_STEP[service].payment;
 
-  if (!reference) return <Navigate to="/flights" replace />;
+  if (!reference) return <Navigate to={searchHome(service)} replace />;
   if (isPending) {
     return (
-      <CheckoutShell step={3} title="Payment">
+      <CheckoutShell step={step} service={service} title="Payment">
         <Skeleton className="h-72 rounded-2xl" />
       </CheckoutShell>
     );
   }
   if (error || !booking) {
     return (
-      <CheckoutShell step={3} title="Payment">
+      <CheckoutShell step={step} service={service} title="Payment">
         <FormAlert>{errorMessage(error)}</FormAlert>
       </CheckoutShell>
     );
   }
   if (booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') {
-    return <Navigate to={confirmationUrl(booking.reference)} replace />;
+    return <Navigate to={confirmationUrl(serviceOf(booking), booking.reference)} replace />;
   }
   return <Payment booking={booking} />;
 }
 
 function Payment({ booking }: { booking: BookingDetails }) {
   const queryClient = useQueryClient();
-  const clearDraft = useFlightDraft((s) => s.clear);
+  const service = serviceOf(booking);
+  const clearFlight = useFlightDraft((s) => s.clear);
+  const clearBus = useBusDraft((s) => s.clear);
   const [method, setMethod] = useState<(typeof METHODS)[number]['id']>('upi');
   const [paid, setPaid] = useState<string | null>(null);
   const holdEnds = booking.holdExpiresAt ? Date.parse(booking.holdExpiresAt) : 0;
   const secondsLeft = useCountdown(holdEnds);
   const expired = booking.status !== 'PENDING_PAYMENT' || secondsLeft === 0;
 
-  const order = useMutation({ mutationFn: () => flightsApi.createPayment(booking.reference) });
+  const order = useMutation({ mutationFn: () => checkoutApi.createPayment(booking.reference) });
   const createOrder = order.mutate;
   // One order per booking: the API returns the open order if one exists, so this is safe to repeat.
   useEffect(() => {
@@ -68,12 +76,13 @@ function Payment({ booking }: { booking: BookingDetails }) {
   const pay = useMutation({
     mutationFn: (outcome: 'success' | 'failure') => {
       const current = order.data as PaymentOrder;
-      return flightsApi.completeMockPayment(current.paymentId, outcome);
+      return checkoutApi.completeMockPayment(current.paymentId, outcome);
     },
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: flightKeys.booking(booking.reference) });
+      await queryClient.invalidateQueries({ queryKey: bookingKeys.booking(booking.reference) });
       if (result.status === 'SUCCESS') {
-        clearDraft();
+        if (service === 'bus') clearBus();
+        else clearFlight();
         setPaid(result.reference);
       } else {
         // A failed attempt closes that order; the next attempt gets a fresh one.
@@ -82,21 +91,21 @@ function Payment({ booking }: { booking: BookingDetails }) {
     },
   });
 
-  if (paid) return <Navigate to={confirmationUrl(paid)} replace />;
+  if (paid) return <Navigate to={confirmationUrl(service, paid)} replace />;
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = String(secondsLeft % 60).padStart(2, '0');
   const mock = order.data?.provider === 'mock';
-  const offers = booking.flights.map((f) => f.offer);
 
   return (
     <CheckoutShell
-      step={3}
+      step={CHECKOUT_STEP[service].payment}
+      service={service}
       title="Payment"
       aside={
         <>
           <PriceSummary price={booking.price} />
-          <ItinerarySummary offers={offers} />
+          <TripSummary booking={booking} />
         </>
       }
     >
@@ -107,7 +116,7 @@ function Payment({ booking }: { booking: BookingDetails }) {
             Please search again to book.
           </FormAlert>
           <Button asChild>
-            <Link to="/flights">Search flights</Link>
+            <Link to={searchHome(service)}>Search again</Link>
           </Button>
         </div>
       ) : (

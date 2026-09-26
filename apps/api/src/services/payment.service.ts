@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { PaymentOrder } from '@zproo/types';
 import type { Logger } from 'pino';
+import type { BusProvider } from '../providers/bus';
 import type { FlightProvider } from '../providers/flight';
 import { MockPaymentProvider, type PaymentProvider } from '../providers/payment';
 import { BookingRepository } from '../repositories/booking.repository';
@@ -18,6 +19,7 @@ interface PaymentServiceDeps {
   prisma: PrismaClient;
   provider: PaymentProvider;
   flights: FlightProvider;
+  buses: BusProvider;
   bookings: BookingService;
   audit: AuditService;
   logger: Logger;
@@ -270,8 +272,9 @@ export class PaymentService {
   }
 
   /**
-   * Tickets are issued after the payment commits. If the airline call fails, the booking stays
-   * confirmed without a PNR and is picked up by support (logged), rather than losing the payment.
+   * Tickets are issued after the payment commits. If the airline or operator call fails, the
+   * booking stays confirmed without a PNR and is picked up by support (logged), rather than
+   * losing the payment.
    */
   private async issueTickets(bookingId: string) {
     const booking = await this.deps.prisma.booking.findUnique({
@@ -279,10 +282,22 @@ export class PaymentService {
       include: {
         passengers: { orderBy: { sequence: 'asc' } },
         flights: { orderBy: { sequence: 'asc' } },
+        bus: true,
       },
     });
     if (!booking) return;
     const repo = new BookingRepository(this.deps.prisma);
+    if (booking.bus) {
+      try {
+        const issued = await this.deps.buses.issue(booking.bus.offerId, booking.bus.seatNumbers);
+        await repo.setBusPnr(booking.id, issued.pnr);
+      } catch (err) {
+        this.deps.logger.error(
+          { err, bookingId },
+          'Bus ticket issuance failed — needs manual follow-up',
+        );
+      }
+    }
     for (const leg of booking.flights) {
       try {
         const issued = await this.deps.flights.issue(leg.offerId, booking.passengers);

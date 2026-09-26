@@ -62,6 +62,14 @@ export class ProviderNotConfiguredError extends AppError {
   }
 }
 
+export class SeatUnavailableError extends AppError {
+  constructor(
+    message = 'Some of the seats you chose were just booked by someone else. Please pick other seats.',
+  ) {
+    super(message, 409, ErrorCode.SEAT_UNAVAILABLE);
+  }
+}
+
 export class SoldOutError extends AppError {
   constructor(message = 'Sorry, these seats just sold out. Please choose another flight.') {
     super(message, 409, ErrorCode.SOLD_OUT);

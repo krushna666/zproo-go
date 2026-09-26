@@ -128,6 +128,10 @@ describe('API docs', () => {
         '/payments/create',
         '/payments/verify',
         '/payments/{paymentId}/fail',
+        '/buses/search',
+        '/buses/{tripId}',
+        '/buses/{tripId}/seats',
+        '/buses/book',
       ]),
     );
     const login = res.body.paths['/auth/login'].post.requestBody.content['application/json'].schema;

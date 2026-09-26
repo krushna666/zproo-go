@@ -1,4 +1,4 @@
-import { addDays, busSearchSchema, todayIso } from '@zproo/validation';
+import { addDays, busSearchSchema, todayIso, type BusSearch } from '@zproo/validation';
 import { CalendarDays, MapPin, Navigation } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { DateField } from '../components/DateField';
@@ -10,11 +10,12 @@ import { busesUrl } from '../url';
 import { useSearchForm } from '../useSearchForm';
 import { QuickDates } from './QuickDates';
 
-export function BusSearchForm() {
+/** `initial` pre-fills the form (the results page's "Modify search"). */
+export function BusSearchForm({ initial }: { initial?: BusSearch }) {
   const today = todayIso();
   const { form, onSubmit } = useSearchForm(
     busSearchSchema,
-    { from: 'pune', to: 'mumbai', date: addDays(today, 1) },
+    initial ?? { from: 'pune', to: 'mumbai', date: addDays(today, 1) },
     busesUrl,
   );
   const { control, getValues, setValue, formState } = form;

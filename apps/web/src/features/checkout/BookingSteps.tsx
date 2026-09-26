@@ -1,16 +1,22 @@
 import { cn } from '@zproo/ui';
 import { Check } from 'lucide-react';
-
-const STEPS = ['Flights', 'Travellers', 'Review', 'Payment', 'Done'] as const;
+import { STEPS, type CheckoutService } from './steps';
 
 /** Checkout progress. `current` is the index of the active step. */
-export function BookingSteps({ current }: { current: number }) {
+export function BookingSteps({
+  current,
+  service = 'flight',
+}: {
+  current: number;
+  service?: CheckoutService;
+}) {
+  const steps = STEPS[service];
   return (
     <ol
       aria-label="Booking progress"
       className="flex items-center gap-1 overflow-x-auto text-xs sm:gap-2 sm:text-sm"
     >
-      {STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const done = i < current;
         const active = i === current;
         return (
@@ -37,7 +43,7 @@ export function BookingSteps({ current }: { current: number }) {
             >
               {step}
             </span>
-            {i < STEPS.length - 1 && (
+            {i < steps.length - 1 && (
               <span aria-hidden className="mx-1 h-px w-4 bg-border sm:w-8" />
             )}
           </li>

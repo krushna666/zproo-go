@@ -57,39 +57,22 @@ export const FLIGHT_DEALS = [
   },
 ] as const;
 
+/** Popular bus routes, Maharashtra first. Fares are indicative lowest seat prices. */
 export const BUS_ROUTES = [
-  { from: 'pune', to: 'mumbai', label: 'Pune → Mumbai', farePaise: 39900, duration: '3h 30m' },
-  { from: 'mumbai', to: 'goa', label: 'Mumbai → Goa', farePaise: 89900, duration: '11h' },
-  { from: 'pune', to: 'goa', label: 'Pune → Goa', farePaise: 79900, duration: '9h 30m' },
+  { from: 'pune', to: 'mumbai', label: 'Pune → Mumbai', farePaise: 29900, duration: '3h 30m' },
+  { from: 'mumbai', to: 'goa', label: 'Mumbai → Goa', farePaise: 64900, duration: '12h' },
+  { from: 'pune', to: 'goa', label: 'Pune → Goa', farePaise: 59900, duration: '10h' },
+  { from: 'pune', to: 'nashik', label: 'Pune → Nashik', farePaise: 32900, duration: '5h' },
+  { from: 'mumbai', to: 'kolhapur', label: 'Mumbai → Kolhapur', farePaise: 44900, duration: '8h' },
+  { from: 'pune', to: 'nagpur', label: 'Pune → Nagpur', farePaise: 84900, duration: '14h 30m' },
   {
-    from: 'bengaluru',
-    to: 'hyderabad',
-    label: 'Bengaluru → Hyderabad',
-    farePaise: 94900,
-    duration: '10h',
+    from: 'mumbai',
+    to: 'sambhajinagar',
+    label: 'Mumbai → Chhatrapati Sambhajinagar',
+    farePaise: 42900,
+    duration: '7h 30m',
   },
-  {
-    from: 'delhi',
-    to: 'jaipur',
-    label: 'New Delhi → Jaipur',
-    farePaise: 49900,
-    duration: '5h 30m',
-  },
-  {
-    from: 'chennai',
-    to: 'bengaluru',
-    label: 'Chennai → Bengaluru',
-    farePaise: 54900,
-    duration: '6h',
-  },
-  { from: 'pune', to: 'nashik', label: 'Pune → Nashik', farePaise: 44900, duration: '5h' },
-  {
-    from: 'delhi',
-    to: 'manali',
-    label: 'New Delhi → Manali',
-    farePaise: 119900,
-    duration: '12h 30m',
-  },
+  { from: 'pune', to: 'bengaluru', label: 'Pune → Bengaluru', farePaise: 89900, duration: '16h' },
 ] as const;
 
 export const TRAIN_ROUTES = [

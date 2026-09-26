@@ -30,13 +30,15 @@ app.ts             createApp(services): middleware + routers, no side effects (t
 config/env.ts      Zod-validated environment; fails fast with names (never values) of bad vars
 middleware/        httpLogger (request IDs), security (Helmet, CORS), rateLimit, validate,
                    auth (authenticate, authorize), notFound, errorHandler
-routes/            one router per module, mounted under /api (health, auth, me, admin, flights, bookings, payments)
+routes/            one router per module, mounted under /api (health, auth, me, admin, flights, buses,
+                   bookings, payments)
 controllers/       HTTP adapters only (read validated input, set cookies, send envelope)
-services/          business logic: Auth, Otp, Token, Password, Rbac, Audit, User, Health, Flight, Booking,
+services/          business logic: Auth, Otp, Token, Password, Rbac, Audit, User, Health, Flight, Bus, Booking,
                    Payment, Ticket (PDF), Cache (Redis, optional)
 repositories/      data access with Prisma; accept a transaction client for multi-step writes
 providers/         external integrations behind interfaces: sms/, email/, identity/ (Google, Apple),
-                   flight/ (FlightProvider; MockFlightProvider), payment/ (PaymentProvider; mock gateway)
+                   flight/ (FlightProvider; MockFlightProvider), bus/ (BusProvider; MockBusProvider),
+                   payment/ (PaymentProvider; mock gateway)
 models/            DTO mappers (e.g. toPublicUser — the only shape a user leaves the API in)
 validators/        route-specific Zod schemas (shared ones live in @zproo/validation)
 docs/              OpenAPI registry built from Zod schemas + Swagger UI router
@@ -161,3 +163,18 @@ On the web, the checkout draft (chosen offers, travellers, idempotency key, book
 kept per tab in `sessionStorage`, so a reload mid-checkout keeps it. Pages:
 `/flights` → `/flights/results` (filters, sorting, leg selection) → `/flights/:id` →
 `/flights/booking` (sign-in required) → `/flights/review` → `/flights/payment` → `/flights/confirmation`.
+
+## Buses (Phase 5)
+
+Buses reuse the booking core: `BookingService.createBusBooking` checks the trip, seats, points,
+ladies-only rules and prices, then writes the booking and holds the seats in one transaction
+(`BusProvider.hold` inserts one `bus_seat_bookings` row per seat; the unique `(trip, seat)` pair
+rejects a taken seat). Payment, ticket issue (operator PNR), hold expiry (seat rows deleted) and
+the PDF ticket are shared with flights.
+
+On the web, checkout pieces are shared under `features/checkout` (layout and steps, price summary,
+payment and confirmation pages at `/flights/…` and `/buses/…`). The bus flow is
+`/buses` → `/buses/results` → `/buses/:id` (details) → `/buses/:id/seats` (seat map, boarding and
+dropping points) → `/buses/booking` (sign-in required) → `/buses/review` → `/buses/payment` →
+`/buses/confirmation`. The seat map refreshes every 20 seconds; seats taken meanwhile drop out of the
+selection, and the review step re-checks them before booking.

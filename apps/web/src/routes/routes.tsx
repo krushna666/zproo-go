@@ -36,6 +36,10 @@ export const routes: RouteObject[] = [
       { path: '/flights', lazy: page(() => import('@/pages/flights/FlightsPage')) },
       { path: '/flights/results', lazy: page(() => import('@/pages/flights/FlightResultsPage')) },
       { path: '/flights/:id', lazy: page(() => import('@/pages/flights/FlightDetailsPage')) },
+      { path: '/buses', lazy: page(() => import('@/pages/buses/BusesPage')) },
+      { path: '/buses/results', lazy: page(() => import('@/pages/buses/BusResultsPage')) },
+      { path: '/buses/:id', lazy: page(() => import('@/pages/buses/BusDetailsPage')) },
+      { path: '/buses/:id/seats', lazy: page(() => import('@/pages/buses/BusSeatsPage')) },
       ...publicPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
       {
         element: <RequireAuth />,
@@ -49,11 +53,18 @@ export const routes: RouteObject[] = [
           { path: '/flights/review', lazy: page(() => import('@/pages/flights/FlightReviewPage')) },
           {
             path: '/flights/payment',
-            lazy: page(() => import('@/pages/flights/FlightPaymentPage')),
+            lazy: page(() => import('@/pages/checkout/PaymentPage')),
           },
           {
             path: '/flights/confirmation',
-            lazy: page(() => import('@/pages/flights/FlightConfirmationPage')),
+            lazy: page(() => import('@/pages/checkout/ConfirmationPage')),
+          },
+          { path: '/buses/booking', lazy: page(() => import('@/pages/buses/BusTravellersPage')) },
+          { path: '/buses/review', lazy: page(() => import('@/pages/buses/BusReviewPage')) },
+          { path: '/buses/payment', lazy: page(() => import('@/pages/checkout/PaymentPage')) },
+          {
+            path: '/buses/confirmation',
+            lazy: page(() => import('@/pages/checkout/ConfirmationPage')),
           },
           ...accountPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
         ],

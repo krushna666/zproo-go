@@ -4,6 +4,7 @@ import type { Db } from './db';
 export const bookingInclude = {
   passengers: { orderBy: { sequence: 'asc' } },
   flights: { orderBy: { sequence: 'asc' } },
+  bus: true,
 } satisfies Prisma.BookingInclude;
 
 export type BookingRecord = Prisma.BookingGetPayload<{ include: typeof bookingInclude }>;
@@ -55,6 +56,10 @@ export class BookingRepository {
       include: bookingInclude,
       take,
     });
+  }
+
+  setBusPnr(bookingId: string, pnr: string) {
+    return this.db.busBooking.update({ where: { bookingId }, data: { pnr } });
   }
 
   setFlightTickets(
