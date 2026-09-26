@@ -45,6 +45,12 @@ const envSchema = z
     GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
     APPLE_CLIENT_ID: z.string().optional(),
     SMS_PROVIDER: z.enum(['console']).default('console'),
+    FLIGHT_PROVIDER: z.enum(['mock']).default('mock'),
+    PAYMENT_PROVIDER: z.enum(['mock']).default('mock'),
+    /** Minutes seats stay held for an unpaid booking. */
+    BOOKING_HOLD_MINUTES: z.coerce.number().int().min(5).max(60).default(15),
+    /** Optional path to the logo PNG used in PDFs (defaults to the web app's brand asset). */
+    BRAND_LOGO_PATH: z.string().optional(),
     EMAIL_PROVIDER: z.enum(['console']).default('console'),
   })
   .superRefine((env, ctx) => {
@@ -60,6 +66,16 @@ const envSchema = z
         path: ['SMS_PROVIDER'],
         message: 'console provider is not allowed in production',
       });
+    }
+    // Mock suppliers would sell invented flights; a mock payment provider would confirm unpaid bookings.
+    for (const key of ['FLIGHT_PROVIDER', 'PAYMENT_PROVIDER'] as const) {
+      if (env[key] === 'mock') {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: 'mock provider is not allowed in production',
+        });
+      }
     }
     if (env.EMAIL_PROVIDER === 'console') {
       ctx.addIssue({

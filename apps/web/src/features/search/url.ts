@@ -1,4 +1,3 @@
-import { addDays, todayIso } from '@zproo/validation';
 import type {
   BikeSearch,
   BusSearch,
@@ -50,40 +49,11 @@ export function flightsUrl(s: FlightSearch): string {
   })}`;
 }
 
-/**
- * Links in prerendered pages (deals, popular routes) can't contain a date — it would be frozen at
- * build time — so they omit it and the result page fills in these defaults.
- */
-export const DEFAULT_LEAD_DAYS = { flight: 14, bus: 1, train: 3, hotel: 7 } as const;
-
-export function parseFlightSearch(params: URLSearchParams) {
-  const tripType = params.get('trip') ?? 'ONE_WAY';
-  const legs =
-    tripType === 'MULTI_CITY'
-      ? (params.get('legs') ?? '')
-          .split(',')
-          .filter(Boolean)
-          .map((leg) => {
-            const [from = '', to = '', date = ''] = leg.split('.');
-            return { from, to, date };
-          })
-      : [
-          {
-            from: params.get('from') ?? '',
-            to: params.get('to') ?? '',
-            date: params.get('date') ?? addDays(todayIso(), DEFAULT_LEAD_DAYS.flight),
-          },
-        ];
-  return {
-    tripType,
-    legs,
-    returnDate: params.get('return') ?? undefined,
-    adults: params.get('adults') ?? '1',
-    children: params.get('children') ?? '0',
-    infants: params.get('infants') ?? '0',
-    cabin: params.get('cabin') ?? 'ECONOMY',
-  };
-}
+/** Parsing lives in @zproo/validation so the API reads search URLs exactly like the web app. */
+export {
+  DEFAULT_LEAD_DAYS,
+  flightSearchInputFromParams as parseFlightSearch,
+} from '@zproo/validation';
 
 // ───────── Other services ─────────
 

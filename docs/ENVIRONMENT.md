@@ -34,6 +34,10 @@ One `.env` file at the repository root is read by the API, Prisma and Vite. Copy
 | `APPLE_CLIENT_ID`        | no       |                         | Enables Apple sign-in (Services ID)                                                                                                  |
 | `SMS_PROVIDER`           | no       | `console`               | `console` prints codes (development only; refused in production)                                                                     |
 | `EMAIL_PROVIDER`         | no       | `console`               | `console` prints emails (development only; refused in production)                                                                    |
+| `FLIGHT_PROVIDER`        | no       | `mock`                  | `mock` = built-in timetable with fictional airlines (development only; refused in production)                                        |
+| `PAYMENT_PROVIDER`       | no       | `mock`                  | `mock` = simulated gateway with signed results (development only; refused in production)                                             |
+| `BOOKING_HOLD_MINUTES`   | no       | `15`                    | 5–60. How long seats are held for an unpaid booking                                                                                  |
+| `BRAND_LOGO_PATH`        | no       |                         | Logo PNG for PDF tickets; defaults to `apps/web/public/assets/brand/zproo-go-logo.png`                                               |
 
 Generate a secret: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
 
@@ -45,9 +49,9 @@ from the phase that starts using it.
 | Phase         | Variables                                                                                                |
 | ------------- | -------------------------------------------------------------------------------------------------------- |
 | Before launch | `SMS_API_KEY` with a real SMS provider adapter                                                           |
-| 4–7 Suppliers | `FLIGHT_PROVIDER`, `BUS_PROVIDER`, `TRAIN_PROVIDER`, `HOTEL_PROVIDER` (`mock` until real adapters exist) |
+| 5–7 Suppliers | `BUS_PROVIDER`, `TRAIN_PROVIDER`, `HOTEL_PROVIDER` (`mock` until real adapters exist)                    |
 | 8 Maps        | `MAP_PROVIDER`, `GOOGLE_MAPS_API_KEY`, `MAPBOX_ACCESS_TOKEN`                                             |
-| 14 Payments   | `PAYMENT_PROVIDER`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`                  |
+| 14 Payments   | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` (with `PAYMENT_PROVIDER=razorpay`)   |
 | 16 Email      | `EMAIL_PROVIDER`, `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `RESEND_API_KEY` |
 | 18 Partners   | `ENCRYPTION_KEY`                                                                                         |
 

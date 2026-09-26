@@ -1,8 +1,23 @@
 # Security
 
-This document tracks controls that are **implemented**. Planned controls for later phases (payment
-signature checks, webhook dedupe, encryption of partner credentials) are specified in
+This document tracks controls that are **implemented**. Planned controls for later phases (gateway
+webhook dedupe, encryption of partner credentials) are specified in
 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) and move here as they ship.
+
+## Bookings and payments (Phase 4)
+
+| Area                  | Control                                                                                                                                                                                                                                                                                               |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Price integrity       | The browser sends offer IDs and the total it showed; the server re-prices every offer from the provider and refuses (`PRICE_CHANGED`) if the total differs. Stored amounts come from the server, never the client                                                                                     |
+| Payment amount        | Payment orders are created for the booking's stored total; the client cannot choose an amount                                                                                                                                                                                                         |
+| Payment verification  | A booking is confirmed only after the gateway signature (HMAC of order and payment IDs) verifies on the server, compared in constant time. Invalid signatures are refused and audited (`PAYMENT_SIGNATURE_INVALID`). The browser's claim of success is never trusted                                  |
+| Idempotency           | `POST /flights/book` requires an `Idempotency-Key`; `(user, key)` is unique in the database, so retries and concurrent duplicates return one booking. Payment orders are reused per booking; payment and booking transitions are conditional updates, so a replayed verification cannot confirm twice |
+| Overselling           | Seats are taken with one conditional `UPDATE … WHERE sold + n <= capacity` inside the booking transaction; a concurrency test books the last seat from three users at once                                                                                                                            |
+| Holds                 | Unpaid bookings expire after `BOOKING_HOLD_MINUTES`; confirmation requires the hold to be valid in the same transaction. A payment captured after expiry is recorded as refund due (`PAYMENT_REFUND_DUE`) and never confirms released seats                                                           |
+| Access                | Bookings, tickets and payments are visible only to their owner (others get `404`, so references cannot be probed) or staff with `booking:read:any`. All booking and payment routes require `booking:create` / `booking:read:own`                                                                      |
+| Development providers | `FLIGHT_PROVIDER=mock` (fictional airlines) and `PAYMENT_PROVIDER=mock` are refused in production. The mock checkout route is not mounted in production. Demo bookings are flagged and their PDF tickets watermarked "not valid for travel"                                                           |
+| Card data             | Never reaches ZPROO GO servers (the gateway's checkout collects it); nothing card-related is stored or logged                                                                                                                                                                                         |
+| Audit                 | `BOOKING_CREATED`, `PAYMENT_ORDER_CREATED`, `PAYMENT_CAPTURED`, `PAYMENT_FAILED`, `PAYMENT_SIGNATURE_INVALID`, `PAYMENT_REFUND_DUE`                                                                                                                                                                   |
 
 ## Authentication (Phase 2)
 

@@ -1,12 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import { seedFlightData } from '../../../prisma/seed/flights';
 import { seedReferenceData } from '../../../prisma/seed/reference';
 import { TEST_DATABASE_URL } from './testUrls';
 
 const repoRoot = path.resolve(import.meta.dirname, '../../..');
 
-/** Creates/migrates the test database and loads reference data once per run. */
+/** Creates/migrates the test database and loads reference and flight data once per run. */
 export default async function setup() {
   const url = TEST_DATABASE_URL;
   if (!url.includes('test')) {
@@ -22,6 +23,7 @@ export default async function setup() {
   const prisma = new PrismaClient({ datasourceUrl: url });
   try {
     await seedReferenceData(prisma);
+    await seedFlightData(prisma);
   } finally {
     await prisma.$disconnect();
   }

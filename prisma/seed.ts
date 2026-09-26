@@ -4,6 +4,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { seedDemoUsers } from './seed/demoUsers';
+import { seedFlightData } from './seed/flights';
 import { seedReferenceData } from './seed/reference';
 
 const prisma = new PrismaClient();
@@ -11,6 +12,7 @@ const prisma = new PrismaClient();
 async function main() {
   await seedReferenceData(prisma);
   const demo = await seedDemoUsers(prisma);
+  const { flights } = await seedFlightData(prisma);
   const [roles, permissions, settings, users] = await Promise.all([
     prisma.role.count(),
     prisma.permission.count(),
@@ -18,7 +20,7 @@ async function main() {
     prisma.user.count(),
   ]);
   console.info(
-    `Seed complete: ${roles} roles, ${permissions} permissions, ${settings} settings, ${users} users`,
+    `Seed complete: ${roles} roles, ${permissions} permissions, ${settings} settings, ${users} users, ${flights} flight services`,
   );
   if (demo.printed) console.info(demo.printed);
 }

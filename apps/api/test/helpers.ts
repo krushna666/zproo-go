@@ -108,10 +108,11 @@ export function buildTestApp(options: TestContextOptions = {}) {
   return createTestContext(options).app;
 }
 
-/** Removes all user data between tests; roles, permissions and settings stay. */
+/** Removes all user and booking data between tests; roles, permissions, settings and the timetable stay. */
 export async function resetUsers() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE users, otp_codes, refresh_tokens, audit_logs, auth_identities, addresses, user_roles RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE users, otp_codes, refresh_tokens, audit_logs, auth_identities, addresses, user_roles, ' +
+      'payments, flight_bookings, booking_passengers, bookings, flight_inventory RESTART IDENTITY CASCADE',
   );
 }
 

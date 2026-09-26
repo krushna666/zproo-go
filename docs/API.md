@@ -27,26 +27,31 @@ well-formed `X-Request-Id` (8–128 chars of `A-Z a-z 0-9 . _ -`) to correlate a
 
 ## Error codes
 
-| HTTP | `errorCode`               | When                                                     |
-| ---- | ------------------------- | -------------------------------------------------------- |
-| 400  | `BAD_REQUEST`             | Malformed JSON or request                                |
-| 400  | `VALIDATION_ERROR`        | Input failed validation (`details` lists each field)     |
-| 401  | `UNAUTHENTICATED`         | Not signed in, or session expired                        |
-| 401  | `INVALID_CREDENTIALS`     | Wrong mobile number/email or password                    |
-| 400  | `INVALID_OTP`             | Wrong code (message says how many attempts are left)     |
-| 400  | `OTP_EXPIRED`             | Code expired, already used, or too many attempts         |
-| 403  | `ACCOUNT_DISABLED`        | Account suspended or deactivated                         |
-| 400  | `PROVIDER_NOT_CONFIGURED` | That social sign-in is not enabled                       |
-| 403  | `FORBIDDEN`               | Authenticated but lacking permission                     |
-| 404  | `NOT_FOUND`               | Unknown route or record                                  |
-| 409  | `CONFLICT`                | Unique constraint (e.g. phone already registered)        |
-| 402  | `PAYMENT_ERROR`           | Payment failed or could not be verified                  |
-| 413  | `PAYLOAD_TOO_LARGE`       | Body over 100 kB                                         |
-| 429  | `RATE_LIMITED`            | Too many requests (see `RateLimit` headers)              |
-| 500  | `DATABASE_ERROR`          | Unexpected database error                                |
-| 500  | `INTERNAL_ERROR`          | Anything unexpected (details are logged, never returned) |
-| 502  | `PROVIDER_ERROR`          | An upstream supplier (airline, payment…) failed          |
-| 503  | `SERVICE_UNAVAILABLE`     | A dependency is down                                     |
+| HTTP | `errorCode`               | When                                                            |
+| ---- | ------------------------- | --------------------------------------------------------------- |
+| 400  | `BAD_REQUEST`             | Malformed JSON or request                                       |
+| 400  | `VALIDATION_ERROR`        | Input failed validation (`details` lists each field)            |
+| 401  | `UNAUTHENTICATED`         | Not signed in, or session expired                               |
+| 401  | `INVALID_CREDENTIALS`     | Wrong mobile number/email or password                           |
+| 400  | `INVALID_OTP`             | Wrong code (message says how many attempts are left)            |
+| 400  | `OTP_EXPIRED`             | Code expired, already used, or too many attempts                |
+| 403  | `ACCOUNT_DISABLED`        | Account suspended or deactivated                                |
+| 400  | `PROVIDER_NOT_CONFIGURED` | That social sign-in is not enabled                              |
+| 403  | `FORBIDDEN`               | Authenticated but lacking permission                            |
+| 404  | `NOT_FOUND`               | Unknown route or record                                         |
+| 409  | `CONFLICT`                | Unique constraint (e.g. phone already registered)               |
+| 409  | `OFFER_EXPIRED`           | The fare is no longer sold; search again                        |
+| 409  | `PRICE_CHANGED`           | Fare differs from `expectedTotalPaise` (new total in `details`) |
+| 409  | `SOLD_OUT`                | Not enough seats left to hold                                   |
+| 409  | `BOOKING_EXPIRED`         | Seat hold ran out before payment completed                      |
+| 409  | `INVALID_STATE`           | Action not allowed in the booking's current status              |
+| 402  | `PAYMENT_ERROR`           | Payment failed or could not be verified                         |
+| 413  | `PAYLOAD_TOO_LARGE`       | Body over 100 kB                                                |
+| 429  | `RATE_LIMITED`            | Too many requests (see `RateLimit` headers)                     |
+| 500  | `DATABASE_ERROR`          | Unexpected database error                                       |
+| 500  | `INTERNAL_ERROR`          | Anything unexpected (details are logged, never returned)        |
+| 502  | `PROVIDER_ERROR`          | An upstream supplier (airline, payment…) failed                 |
+| 503  | `SERVICE_UNAVAILABLE`     | A dependency is down                                            |
 
 ## Endpoints
 
@@ -108,6 +113,41 @@ Every `/api/admin/*` route requires `admin:access` plus its own permission.
 | Method | Path               | Permission      | Description                                                                       |
 | ------ | ------------------ | --------------- | --------------------------------------------------------------------------------- |
 | GET    | `/api/admin/users` | `user:read:any` | Paginated users; `search` (name, phone, email), `role`, `status`, `page`, `limit` |
+
+### Flights (Phase 4)
+
+| Method | Path                     | Auth             | Description                                                                                                                  |
+| ------ | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/flights/search`    | —                | `trip`, `from`, `to`, `date`, `return` or `legs=PNQ.DEL.2026-10-25,…`; `adults`, `children`, `infants`, `cabin`. Cached 60 s |
+| GET    | `/api/flights/{offerId}` | —                | Current price and seats for one offer; `adults`, `children`, `infants`                                                       |
+| POST   | `/api/flights/book`      | `booking:create` | Holds seats and creates a `PENDING_PAYMENT` booking. **Requires `Idempotency-Key`**                                          |
+
+`POST /api/flights/book` body: `{ offerIds, passengers[], contact: { email, phone }, expectedTotalPaise }`.
+The server re-prices every offer; if the total differs it answers `409 PRICE_CHANGED` and nothing is
+held. Retrying with the same `Idempotency-Key` returns the original booking. Seats are held for
+`BOOKING_HOLD_MINUTES`; unpaid bookings are then cancelled and the seats released (a job runs every
+minute on each API instance; the state change is conditional, so instances never double-release).
+
+### Bookings
+
+| Method | Path                                   | Permission         | Description                                                        |
+| ------ | -------------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| GET    | `/api/bookings`                        | `booking:read:own` | The signed-in user's bookings, newest first                        |
+| GET    | `/api/bookings/{reference}`            | `booking:read:own` | Details. Other users' bookings are `404` unless `booking:read:any` |
+| GET    | `/api/bookings/{reference}/ticket.pdf` | `booking:read:own` | E-ticket PDF; `409` until the booking is confirmed                 |
+
+### Payments
+
+| Method | Path                             | Permission       | Description                                                                                                 |
+| ------ | -------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/payments/create`           | `booking:create` | `{ bookingReference }` → order for the booking's amount (reuses an open order)                              |
+| POST   | `/api/payments/verify`           | `booking:create` | `{ paymentId, providerPaymentId, signature }`; signature checked server-side, then the booking is confirmed |
+| POST   | `/api/payments/{paymentId}/fail` | `booking:create` | Record a failed/abandoned attempt; the booking stays payable until the hold ends                            |
+| POST   | `/api/payments/mock/complete`    | `booking:create` | **Development only** (not mounted in production): simulates the gateway returning `success` or `failure`    |
+
+The amount always comes from the booking on the server; the client's view of the payment is never
+trusted. If a payment is captured after the hold expired, the booking stays cancelled and the
+payment is recorded as `FAILED` with "refund due" for finance (audit `PAYMENT_REFUND_DUE`).
 
 The full endpoint plan (flights, buses, trains, hotels, rides, holidays, parcels, wallet, bookings,
 payments, offers, support, admin) is in

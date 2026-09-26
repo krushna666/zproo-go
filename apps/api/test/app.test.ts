@@ -119,6 +119,15 @@ describe('API docs', () => {
         '/auth/reset-password',
         '/me',
         '/admin/users',
+        '/flights/search',
+        '/flights/{offerId}',
+        '/flights/book',
+        '/bookings',
+        '/bookings/{reference}',
+        '/bookings/{reference}/ticket.pdf',
+        '/payments/create',
+        '/payments/verify',
+        '/payments/{paymentId}/fail',
       ]),
     );
     const login = res.body.paths['/auth/login'].post.requestBody.content['application/json'].schema;

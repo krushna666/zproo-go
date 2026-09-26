@@ -2,7 +2,10 @@ import type { PrismaClient } from '@prisma/client';
 import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
 import type { Env } from './config/env';
+import { resolveLogoPath } from './config/brand';
 import { createEmailProvider, type EmailProvider } from './providers/email';
+import { createFlightProvider, type FlightProvider } from './providers/flight';
+import { createPaymentProvider, type PaymentProvider } from './providers/payment';
 import { createIdentityVerifiers, type IdentityVerifiers } from './providers/identity';
 import { createSmsProvider, type SmsProvider } from './providers/sms';
 import { AuditRepository } from './repositories/audit.repository';
@@ -13,6 +16,11 @@ import { RoleRepository } from './repositories/role.repository';
 import { UserRepository } from './repositories/user.repository';
 import { AuditService } from './services/audit.service';
 import { AuthService } from './services/auth.service';
+import { BookingService } from './services/booking.service';
+import { CacheService } from './services/cache.service';
+import { FlightService } from './services/flight.service';
+import { PaymentService } from './services/payment.service';
+import { TicketService } from './services/ticket.service';
 import { HealthService, type DependencyCheck } from './services/health.service';
 import { OtpService } from './services/otp.service';
 import { PasswordService } from './services/password.service';
@@ -24,6 +32,8 @@ export interface Providers {
   sms: SmsProvider;
   email: EmailProvider;
   identityVerifiers: IdentityVerifiers;
+  flights: FlightProvider;
+  payments: PaymentProvider;
 }
 
 export interface ContainerOptions {
@@ -51,6 +61,8 @@ export function createServices({
   const sms = providers.sms ?? createSmsProvider(env);
   const email = providers.email ?? createEmailProvider(env);
   const identityVerifiers = providers.identityVerifiers ?? createIdentityVerifiers(env);
+  const flightProvider = providers.flights ?? createFlightProvider(env, prisma);
+  const paymentProvider = providers.payments ?? createPaymentProvider(env);
 
   const users = new UserRepository(prisma);
   const roles = new RoleRepository(prisma);
@@ -63,6 +75,13 @@ export function createServices({
   const passwords = new PasswordService();
 
   const checks = healthChecks ?? [databaseCheck(prisma), ...(redis ? [redisCheck(redis)] : [])];
+  const bookings = new BookingService({
+    prisma,
+    flights: flightProvider,
+    audit,
+    logger,
+    holdMinutes: env.BOOKING_HOLD_MINUTES,
+  });
 
   return {
     health: new HealthService(checks, env.APP_VERSION, healthTimeoutMs),
@@ -83,6 +102,17 @@ export function createServices({
       logger,
     }),
     users: new UserService(users, rbac, audit),
+    flights: new FlightService(flightProvider, new CacheService(redis, logger)),
+    bookings,
+    payments: new PaymentService({
+      prisma,
+      provider: paymentProvider,
+      flights: flightProvider,
+      bookings,
+      audit,
+      logger,
+    }),
+    tickets: new TicketService(resolveLogoPath(env.BRAND_LOGO_PATH)),
   };
 }
 

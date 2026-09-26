@@ -9,7 +9,11 @@ export interface Airport {
   city: string;
   name: string;
   country: string;
+  /** IANA time zone (defaults to Asia/Kolkata when omitted). */
+  timezone?: string;
 }
+
+export const airportTimezone = (a: Airport) => a.timezone ?? 'Asia/Kolkata';
 
 export const AIRPORTS: readonly Airport[] = [
   { code: 'DEL', city: 'New Delhi', name: 'Indira Gandhi International Airport', country: 'India' },
@@ -79,10 +83,29 @@ export const AIRPORTS: readonly Airport[] = [
     city: 'Dubai',
     name: 'Dubai International Airport',
     country: 'United Arab Emirates',
+    timezone: 'Asia/Dubai',
   },
-  { code: 'SIN', city: 'Singapore', name: 'Singapore Changi Airport', country: 'Singapore' },
-  { code: 'BKK', city: 'Bangkok', name: 'Suvarnabhumi Airport', country: 'Thailand' },
-  { code: 'LHR', city: 'London', name: 'Heathrow Airport', country: 'United Kingdom' },
+  {
+    code: 'SIN',
+    city: 'Singapore',
+    name: 'Singapore Changi Airport',
+    country: 'Singapore',
+    timezone: 'Asia/Singapore',
+  },
+  {
+    code: 'BKK',
+    city: 'Bangkok',
+    name: 'Suvarnabhumi Airport',
+    country: 'Thailand',
+    timezone: 'Asia/Bangkok',
+  },
+  {
+    code: 'LHR',
+    city: 'London',
+    name: 'Heathrow Airport',
+    country: 'United Kingdom',
+    timezone: 'Europe/London',
+  },
 ];
 
 export interface City {

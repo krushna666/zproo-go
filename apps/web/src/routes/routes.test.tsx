@@ -16,7 +16,7 @@ describe('routing', () => {
   });
 
   it.each([
-    ['/flights', 'Flights', 4],
+    ['/trains', 'Trains', 6],
     ['/buses/abc/seats', 'Choose seats', 5],
     ['/offers', 'Offers', 13],
   ])('renders the planned page for %s', async (path, title, phase) => {

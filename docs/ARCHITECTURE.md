@@ -30,11 +30,13 @@ app.ts             createApp(services): middleware + routers, no side effects (t
 config/env.ts      Zod-validated environment; fails fast with names (never values) of bad vars
 middleware/        httpLogger (request IDs), security (Helmet, CORS), rateLimit, validate,
                    auth (authenticate, authorize), notFound, errorHandler
-routes/            one router per module, mounted under /api (health, auth, me, admin)
+routes/            one router per module, mounted under /api (health, auth, me, admin, flights, bookings, payments)
 controllers/       HTTP adapters only (read validated input, set cookies, send envelope)
-services/          business logic: Auth, Otp, Token, Password, Rbac, Audit, User, Health
+services/          business logic: Auth, Otp, Token, Password, Rbac, Audit, User, Health, Flight, Booking,
+                   Payment, Ticket (PDF), Cache (Redis, optional)
 repositories/      data access with Prisma; accept a transaction client for multi-step writes
-providers/         external integrations behind interfaces: sms/, email/, identity/ (Google, Apple)
+providers/         external integrations behind interfaces: sms/, email/, identity/ (Google, Apple),
+                   flight/ (FlightProvider; MockFlightProvider), payment/ (PaymentProvider; mock gateway)
 models/            DTO mappers (e.g. toPublicUser — the only shape a user leaves the API in)
 validators/        route-specific Zod schemas (shared ones live in @zproo/validation)
 docs/              OpenAPI registry built from Zod schemas + Swagger UI router
@@ -136,3 +138,26 @@ node scripts/prerender.mjs           → dist/index.html, dist/<page>/index.html
 fall back to `dist/app.html` for every other route. The web app's Content-Security-Policy must allow
 the inline `<style>`, the JSON-LD `<script type="application/ld+json">`, and React Router's inline
 hydration script (use hashes).
+
+## Flights and bookings (Phase 4)
+
+```
+GET  /flights/search ─▶ FlightService ─▶ FlightProvider.search   (cached 60 s in Redis)
+POST /flights/book   ─▶ BookingService: re-price offers → check passengers → PRICE_CHANGED?
+                        └─ transaction: FlightProvider.hold (seats) + create booking (PENDING_PAYMENT)
+POST /payments/create ─▶ PaymentService: order for the stored total (PaymentProvider.createOrder)
+POST /payments/verify ─▶ verify signature → transaction: booking CONFIRMED (hold still valid) + payment SUCCESS
+                        └─ after commit: FlightProvider.issue → PNR + ticket numbers
+every minute         ─▶ BookingService.expireHolds: CANCELLED + seats released + open payments cancelled
+```
+
+`FlightProvider` and `PaymentProvider` are the seams for real suppliers (an airline aggregator,
+Razorpay): services depend only on the interfaces, and `container.ts` picks the implementation from
+`FLIGHT_PROVIDER` / `PAYMENT_PROVIDER`. The mock flight provider prices deterministically (route,
+date, cabin, days to departure and a simulated load factor), so search, offer and booking agree.
+The price breakdown lives in `@zproo/utils` so the web app and the API compute it identically.
+
+On the web, the checkout draft (chosen offers, travellers, idempotency key, booking reference) is
+kept per tab in `sessionStorage`, so a reload mid-checkout keeps it. Pages:
+`/flights` → `/flights/results` (filters, sorting, leg selection) → `/flights/:id` →
+`/flights/booking` (sign-in required) → `/flights/review` → `/flights/payment` → `/flights/confirmation`.

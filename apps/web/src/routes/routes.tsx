@@ -33,11 +33,28 @@ export const routes: RouteObject[] = [
       { path: '/terms', lazy: page(() => import('@/pages/company/TermsPage')) },
       { path: '/privacy', lazy: page(() => import('@/pages/company/PrivacyPage')) },
       { path: '/refund-policy', lazy: page(() => import('@/pages/company/RefundPolicyPage')) },
+      { path: '/flights', lazy: page(() => import('@/pages/flights/FlightsPage')) },
+      { path: '/flights/results', lazy: page(() => import('@/pages/flights/FlightResultsPage')) },
+      { path: '/flights/:id', lazy: page(() => import('@/pages/flights/FlightDetailsPage')) },
       ...publicPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
       {
         element: <RequireAuth />,
         children: [
           { path: '/profile', lazy: page(() => import('@/pages/account/ProfilePage')) },
+          // Checkout: booking needs an account (tickets and payments belong to a user).
+          {
+            path: '/flights/booking',
+            lazy: page(() => import('@/pages/flights/FlightTravellersPage')),
+          },
+          { path: '/flights/review', lazy: page(() => import('@/pages/flights/FlightReviewPage')) },
+          {
+            path: '/flights/payment',
+            lazy: page(() => import('@/pages/flights/FlightPaymentPage')),
+          },
+          {
+            path: '/flights/confirmation',
+            lazy: page(() => import('@/pages/flights/FlightConfirmationPage')),
+          },
           ...accountPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
         ],
       },

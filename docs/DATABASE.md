@@ -46,11 +46,34 @@ A test in `apps/api` asserts the shared enums equal the Prisma enums.
 Soft-deleted users keep their unique `phone`/`email`. Account deletion (Phase 2) anonymises
 those fields so the number can be registered again.
 
+## Phase 4 schema (flights, bookings, payments)
+
+| Table                | Purpose                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `airports`           | IATA code, city, country and IANA time zone (all flight times are stored as UTC instants)                                             |
+| `airlines`           | Two-letter code and name                                                                                                              |
+| `flights`            | A scheduled service: route, days of week (`1`=Mon … `7`=Sun), aircraft, base fare, seats per cabin                                    |
+| `flight_segments`    | Legs of a service (non-stop = 1) with local departure time, day offset and duration                                                   |
+| `flight_inventory`   | Seats sold per service, date and cabin. Holds use `sold = sold + n WHERE sold + n <= capacity` (atomic)                               |
+| `bookings`           | One per purchase, any service: reference `ZP-YYYY-XXXXXX`, status, amounts in paise, hold expiry, `(user_id, idempotency_key)` unique |
+| `booking_passengers` | Travellers on a booking                                                                                                               |
+| `flight_bookings`    | One per flight leg: offer snapshot (JSON, what the customer saw), PNR, ticket numbers, seats held                                     |
+| `payments`           | Gateway orders and results; unique `provider_order_id` / `provider_payment_id`                                                        |
+
+Booking lifecycle: `PENDING_PAYMENT` (seats held) → `CONFIRMED` on verified payment, or `CANCELLED`
+(`HOLD_EXPIRED`) when the hold runs out and the seats are released. Every transition is a
+conditional update on the current status, so concurrent requests and API instances cannot apply
+the same change twice.
+
 ## Seed data
 
 `npm run db:seed` loads, idempotently:
 
 - **Reference data** (every environment): 9 roles, 28 permissions, default system settings.
+- **Flight timetable** (development/test; the mock provider only): 26 airports, 6 fictional
+  airlines (Saffron Air, Monsoon Airways, Deccan Blue, Coral Wings, Himalaya Air, Gulf Star) and 116
+  services on 20 routes, including 6 one-stop connections. Fictional names keep demo inventory from
+  being mistaken for real airline fares.
 - **Demo users** (skipped when `NODE_ENV=production`): 100 users with deterministic Indian names,
   one account per staff role, customers, and some saved addresses. **No passwords are stored.**
   Sign in with mobile OTP; in development the code is shown on screen.

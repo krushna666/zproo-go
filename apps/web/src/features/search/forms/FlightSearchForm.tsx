@@ -1,5 +1,5 @@
 import { CABIN_CLASS_LABELS, CabinClass, TripType } from '@zproo/types';
-import { addDays, flightSearchSchema, todayIso } from '@zproo/validation';
+import { addDays, flightSearchSchema, todayIso, type FlightSearch } from '@zproo/validation';
 import { cn } from '@zproo/ui';
 import { CalendarDays, Plus, PlaneLanding, PlaneTakeoff, Trash2, Users } from 'lucide-react';
 import { Controller, useFieldArray, useWatch } from 'react-hook-form';
@@ -19,11 +19,12 @@ const TRIP_LABELS: Record<TripType, string> = {
   MULTI_CITY: 'Multi City',
 };
 
-export function FlightSearchForm() {
+/** `initial` pre-fills the form (the results page's "Modify search"). */
+export function FlightSearchForm({ initial }: { initial?: FlightSearch }) {
   const today = todayIso();
   const { form, onSubmit } = useSearchForm(
     flightSearchSchema,
-    {
+    initial ?? {
       tripType: 'ONE_WAY',
       legs: [{ from: 'PNQ', to: 'DEL', date: addDays(today, 7) }],
       returnDate: undefined,

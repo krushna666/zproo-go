@@ -1,4 +1,5 @@
 import { ErrorCode, type FieldIssue } from '@zproo/types';
+import { formatMoney } from '@zproo/utils';
 
 /** Base class for errors whose message is safe to show to API clients. */
 export class AppError extends Error {
@@ -58,6 +59,46 @@ export class AccountDisabledError extends AppError {
 export class ProviderNotConfiguredError extends AppError {
   constructor(message = 'This sign-in method is not available') {
     super(message, 400, ErrorCode.PROVIDER_NOT_CONFIGURED);
+  }
+}
+
+export class SoldOutError extends AppError {
+  constructor(message = 'Sorry, these seats just sold out. Please choose another flight.') {
+    super(message, 409, ErrorCode.SOLD_OUT);
+  }
+}
+
+export class OfferExpiredError extends AppError {
+  constructor(message = 'This fare is no longer available. Please search again.') {
+    super(message, 409, ErrorCode.OFFER_EXPIRED);
+  }
+}
+
+export class PriceChangedError extends AppError {
+  constructor(readonly newTotalPaise: number) {
+    super(
+      'The fare has changed since you selected it. Please review the new price.',
+      409,
+      ErrorCode.PRICE_CHANGED,
+      [
+        {
+          path: 'body.expectedTotalPaise',
+          message: `The new total is ${formatMoney(newTotalPaise)}`,
+        },
+      ],
+    );
+  }
+}
+
+export class BookingExpiredError extends AppError {
+  constructor(message = 'Your seat hold has expired. Please search again.') {
+    super(message, 409, ErrorCode.BOOKING_EXPIRED);
+  }
+}
+
+export class InvalidStateError extends AppError {
+  constructor(message: string) {
+    super(message, 409, ErrorCode.INVALID_STATE);
   }
 }
 

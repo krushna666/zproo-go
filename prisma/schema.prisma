@@ -57,6 +57,58 @@ enum AuthProvider {
   APPLE
 }
 
+enum ServiceType {
+  FLIGHT
+  BUS
+  TRAIN
+  HOTEL
+  CAB
+  BIKE
+  HOLIDAY
+  PARCEL
+  CORPORATE
+}
+
+enum BookingStatus {
+  INITIATED
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  AUTHORIZED
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+enum CabinClass {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+enum PassengerType {
+  ADULT
+  CHILD
+  INFANT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 // ────────────────────────────── Identity ─────────────────────────────
 
 model User {
@@ -85,6 +137,8 @@ model User {
   addresses      Address[]
   auditLogs      AuditLog[]
   settingsEdited SystemSetting[]
+  bookings       Booking[]
+  payments       Payment[]
 
   @@index([status])
   @@index([createdAt])
@@ -268,4 +322,229 @@ model SystemSetting {
   updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("system_settings")
+}
+
+// ────────────────────────────── Flights ──────────────────────────────
+
+model Airline {
+  id        String   @id @default(cuid())
+  /// IATA designator, e.g. "SF"
+  code      String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  flights  Flight[]
+  segments FlightSegment[]
+
+  @@map("airlines")
+}
+
+model Airport {
+  id        String @id @default(cuid())
+  /// IATA code, e.g. "PNQ"
+  code      String @unique
+  name      String
+  city      String
+  country   String
+  /// IANA time zone, e.g. "Asia/Kolkata" — schedules are local to the airport.
+  timezone  String
+  latitude  Float?
+  longitude Float?
+
+  departures        Flight[]        @relation("FlightOrigin")
+  arrivals          Flight[]        @relation("FlightDestination")
+  segmentDepartures FlightSegment[] @relation("SegmentOrigin")
+  segmentArrivals   FlightSegment[] @relation("SegmentDestination")
+
+  @@map("airports")
+}
+
+/// A scheduled service in the development (mock) flight provider. Real providers return
+/// offers directly; this table is the mock's timetable.
+model Flight {
+  id            String   @id @default(cuid())
+  airlineId     String   @map("airline_id")
+  /// Marketing flight number of the journey, e.g. "SF 2135"
+  flightNumber  String   @map("flight_number")
+  originId      String   @map("origin_id")
+  destinationId String   @map("destination_id")
+  /// ISO weekdays the service operates (1 = Monday … 7 = Sunday)
+  daysOfWeek    Int[]    @map("days_of_week")
+  /// Economy base fare per adult in paise before demand pricing
+  baseFarePaise Int      @map("base_fare_paise")
+  seatsEconomy  Int      @map("seats_economy")
+  seatsPremium  Int      @default(0) @map("seats_premium")
+  seatsBusiness Int      @default(0) @map("seats_business")
+  seatsFirst    Int      @default(0) @map("seats_first")
+  aircraft      String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  airline     Airline           @relation(fields: [airlineId], references: [id])
+  origin      Airport           @relation("FlightOrigin", fields: [originId], references: [id])
+  destination Airport           @relation("FlightDestination", fields: [destinationId], references: [id])
+  segments    FlightSegment[]
+  inventory   FlightInventory[]
+
+  @@unique([airlineId, flightNumber])
+  @@index([originId, destinationId, active])
+  @@map("flights")
+}
+
+/// One take-off and landing of a scheduled service. Non-stop services have one segment.
+model FlightSegment {
+  id              String @id @default(cuid())
+  flightId        String @map("flight_id")
+  sequence        Int
+  airlineId       String @map("airline_id")
+  flightNumber    String @map("flight_number")
+  originId        String @map("origin_id")
+  destinationId   String @map("destination_id")
+  /// Local departure time at the segment origin, "HH:MM"
+  departureTime   String @map("departure_time")
+  /// Whole days after the journey's first departure date (0 = same day)
+  dayOffset       Int    @default(0) @map("day_offset")
+  durationMinutes Int    @map("duration_minutes")
+
+  flight      Flight  @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  airline     Airline @relation(fields: [airlineId], references: [id])
+  origin      Airport @relation("SegmentOrigin", fields: [originId], references: [id])
+  destination Airport @relation("SegmentDestination", fields: [destinationId], references: [id])
+
+  @@unique([flightId, sequence])
+  @@map("flight_segments")
+}
+
+/// Seats sold per service, date and cabin. Updated with a conditional increment so two
+/// bookings can never oversell the last seats.
+model FlightInventory {
+  id       String     @id @default(cuid())
+  flightId String     @map("flight_id")
+  date     DateTime   @db.Date
+  cabin    CabinClass
+  capacity Int
+  sold     Int        @default(0)
+
+  flight Flight @relation(fields: [flightId], references: [id], onDelete: Cascade)
+
+  @@unique([flightId, date, cabin])
+  @@map("flight_inventory")
+}
+
+// ────────────────────────────── Bookings ─────────────────────────────
+
+model Booking {
+  id                  String        @id @default(cuid())
+  /// Customer-facing reference, ZP-YYYY-XXXXXX
+  reference           String        @unique
+  userId              String        @map("user_id")
+  serviceType         ServiceType   @map("service_type")
+  status              BookingStatus @default(INITIATED)
+  paymentStatus       PaymentStatus @default(CREATED) @map("payment_status")
+  currency            String        @default("INR") @db.Char(3)
+  baseAmountPaise     Int           @map("base_amount_paise")
+  taxAmountPaise      Int           @map("tax_amount_paise")
+  feeAmountPaise      Int           @default(0) @map("fee_amount_paise")
+  discountAmountPaise Int           @default(0) @map("discount_amount_paise")
+  totalAmountPaise    Int           @map("total_amount_paise")
+  contactEmail        String        @map("contact_email")
+  contactPhone        String        @map("contact_phone")
+  travelDate          DateTime      @map("travel_date") @db.Date
+  /// Seats/rooms are held until this time; unpaid bookings are then cancelled.
+  holdExpiresAt       DateTime?     @map("hold_expires_at")
+  confirmedAt         DateTime?     @map("confirmed_at")
+  cancelledAt         DateTime?     @map("cancelled_at")
+  cancellationReason  String?       @map("cancellation_reason")
+  /// Client-supplied Idempotency-Key; retries of the same request return the same booking.
+  idempotencyKey      String?       @map("idempotency_key")
+  metadata            Json?
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  user       User               @relation(fields: [userId], references: [id])
+  passengers BookingPassenger[]
+  flights    FlightBooking[]
+  payments   Payment[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([status, holdExpiresAt])
+  @@index([serviceType, travelDate])
+  @@map("bookings")
+}
+
+model BookingPassenger {
+  id          String        @id @default(cuid())
+  bookingId   String        @map("booking_id")
+  sequence    Int
+  type        PassengerType
+  title       String
+  firstName   String        @map("first_name")
+  lastName    String        @map("last_name")
+  dateOfBirth DateTime?     @map("date_of_birth") @db.Date
+  gender      Gender
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, sequence])
+  @@map("booking_passengers")
+}
+
+/// One flown journey (leg) of a flight booking, with a snapshot of the offer as sold.
+model FlightBooking {
+  id              String     @id @default(cuid())
+  bookingId       String     @map("booking_id")
+  sequence        Int
+  provider        String
+  offerId         String     @map("offer_id")
+  /// Mock provider only: the scheduled service and date whose inventory was used.
+  flightId        String?    @map("flight_id")
+  serviceDate     DateTime?  @map("service_date") @db.Date
+  cabin           CabinClass
+  seats           Int
+  originCode      String     @map("origin_code")
+  destinationCode String     @map("destination_code")
+  departureAt     DateTime   @map("departure_at")
+  arrivalAt       DateTime   @map("arrival_at")
+  /// Offer as sold: airline, segments, fares, baggage, fare rules.
+  offer           Json
+  /// Airline booking reference, set on confirmation.
+  pnr             String?
+  /// [{ passengerId, ticketNumber }], set on confirmation.
+  tickets         Json?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, sequence])
+  @@index([flightId, serviceDate])
+  @@map("flight_bookings")
+}
+
+// ────────────────────────────── Payments ─────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+  bookingId         String        @map("booking_id")
+  userId            String        @map("user_id")
+  provider          String
+  providerOrderId   String        @unique @map("provider_order_id")
+  providerPaymentId String?       @unique @map("provider_payment_id")
+  amountPaise       Int           @map("amount_paise")
+  currency          String        @default("INR") @db.Char(3)
+  status            PaymentStatus @default(CREATED)
+  method            String?
+  failureReason     String?       @map("failure_reason")
+  capturedAt        DateTime?     @map("captured_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([bookingId])
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("payments")
 }

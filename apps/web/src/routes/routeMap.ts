@@ -13,49 +13,6 @@ export interface PlannedRoute {
 }
 
 export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
-  // Flights — Phase 4
-  {
-    path: '/flights',
-    title: 'Flights',
-    description: 'Search one-way, round-trip and multi-city flights.',
-    phase: 4,
-  },
-  {
-    path: '/flights/results',
-    title: 'Flight results',
-    description: 'Compare fares, timings, stops and baggage.',
-    phase: 4,
-  },
-  {
-    path: '/flights/booking',
-    title: 'Passenger details',
-    description: 'Add travellers, seats and add-ons.',
-    phase: 4,
-  },
-  {
-    path: '/flights/review',
-    title: 'Review flight',
-    description: 'Check your itinerary and fare breakdown.',
-    phase: 4,
-  },
-  {
-    path: '/flights/payment',
-    title: 'Flight payment',
-    description: 'Pay securely with UPI, cards, net banking or wallet.',
-    phase: 4,
-  },
-  {
-    path: '/flights/confirmation',
-    title: 'Flight confirmed',
-    description: 'Your e-ticket and booking reference.',
-    phase: 4,
-  },
-  {
-    path: '/flights/:id',
-    title: 'Flight details',
-    description: 'Fare rules, baggage and refundability.',
-    phase: 4,
-  },
   // Buses — Phase 5
   {
     path: '/buses',

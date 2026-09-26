@@ -252,3 +252,45 @@ export const parcelQuoteSchema = z.object({
   weightKg: z.coerce.number().positive('Enter the weight').max(50, 'Up to 50 kg per parcel'),
 });
 export type ParcelQuote = z.output<typeof parcelQuoteSchema>;
+
+// ───────────────────────────── URL / query parsing ─────────────────────────────
+
+/**
+ * Links in prerendered pages (deals, popular routes) can't contain a date — it would be frozen at
+ * build time — so they omit it and these defaults apply.
+ */
+export const DEFAULT_LEAD_DAYS = { flight: 14, bus: 1, train: 3, hotel: 7 } as const;
+
+/**
+ * Raw flight search input from URL query parameters (web result pages and GET /api/flights/search):
+ * one way / round trip use from, to, date, return; multi-city uses legs=PNQ.DEL.2026-10-25,….
+ * The result still has to go through `flightSearchSchema`.
+ */
+export function flightSearchInputFromParams(params: { get(name: string): string | null }) {
+  const tripType = params.get('trip') ?? 'ONE_WAY';
+  const legs =
+    tripType === 'MULTI_CITY'
+      ? (params.get('legs') ?? '')
+          .split(',')
+          .filter(Boolean)
+          .map((leg) => {
+            const [from = '', to = '', date = ''] = leg.split('.');
+            return { from, to, date };
+          })
+      : [
+          {
+            from: params.get('from') ?? '',
+            to: params.get('to') ?? '',
+            date: params.get('date') ?? addDays(todayIso(), DEFAULT_LEAD_DAYS.flight),
+          },
+        ];
+  return {
+    tripType,
+    legs,
+    returnDate: params.get('return') ?? undefined,
+    adults: params.get('adults') ?? '1',
+    children: params.get('children') ?? '0',
+    infants: params.get('infants') ?? '0',
+    cabin: params.get('cabin') ?? 'ECONOMY',
+  };
+}
