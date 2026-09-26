@@ -23,25 +23,27 @@ export function Seo({
 }: SeoProps) {
   const { pathname } = useLocation();
   const fullTitle = title ? `${title} | ${BRAND.name}` : `${BRAND.name} — ${BRAND.tagline}`;
-  const canonical = `${env.siteUrl}${pathname === '/' ? '' : pathname}`;
-  const ogImage = new URL(image ?? BRAND.assets.logo, `${env.siteUrl}/`).toString();
+  const canonical = env.siteUrl ? `${env.siteUrl}${pathname === '/' ? '' : pathname}` : undefined;
+  const ogImage = env.siteUrl
+    ? new URL(image ?? BRAND.assets.logo, `${env.siteUrl}/`).toString()
+    : undefined;
 
   return (
     <>
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
-      <link rel="canonical" href={canonical} />
+      {canonical && <link rel="canonical" href={canonical} />}
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content={BRAND.name} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:url" content={canonical} />
-      <meta property="og:image" content={ogImage} />
+      {canonical && <meta property="og:url" content={canonical} />}
+      {ogImage && <meta property="og:image" content={ogImage} />}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
+      {ogImage && <meta name="twitter:image" content={ogImage} />}
     </>
   );
 }

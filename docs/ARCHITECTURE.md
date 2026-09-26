@@ -89,3 +89,50 @@ exposed to Tailwind via `@theme inline`, so utilities like `bg-primary` and `tex
 them. The same values are exported from `@zproo/config` (`BRAND.colors`) for emails and PDFs.
 Typeface: Plus Jakarta Sans (self-hosted, no third-party requests). Motion respects
 `prefers-reduced-motion`.
+
+## Search (Phase 3)
+
+- One validated form per service under `apps/web/src/features/search/forms`, all driven by the shared
+  Zod schemas in `@zproo/validation` (`flightSearchSchema`, `busSearchSchema`, …) — the same rules the
+  API will enforce in Phases 4–11.
+- Place pickers use the shared reference data in `@zproo/config` (`AIRPORTS`, `CITIES`,
+  `TRAIN_STATIONS`), which the Phase 4+ database seed will also use.
+- Submitting navigates to a result URL (`features/search/url.ts`) so searches are shareable and
+  survive reloads. Each `…Url` builder has a `parse…` counterpart for the result page.
+- Links on prerendered pages (deals, popular routes) never contain dates; result pages default
+  them (`DEFAULT_LEAD_DAYS`).
+- Only the flight form ships with the home page; other tabs load when first opened.
+
+## Images (Phase 3)
+
+- Every photo slot is declared in `apps/web/src/config/images.ts` with alt text and an illustrated
+  fallback scene. `<TravelImage>` renders responsive WebP (480/960/1600 px, lazy by default) when a
+  photo is published, otherwise the illustration — never a broken image.
+- Originals go in `apps/web/assets-src/images/<id>.jpg`; `npm run images -w @zproo/web` generates
+  the variants and `src/config/imageManifest.json`, and refuses any photo without an entry in
+  `credits.json`. See `apps/web/assets-src/images/README.md`.
+
+## Prerendering (Phase 3)
+
+Public pages listed in `apps/web/scripts/indexable-pages.json` (home, about, terms, privacy, refund
+policy) are rendered to static HTML at build time:
+
+```
+vite build                           → dist/ (client app)
+vite build --ssr src/entry-server.tsx → dist-ssr/ (temporary)
+node scripts/prerender.mjs           → dist/index.html, dist/<page>/index.html, dist/app.html
+```
+
+- Crawlers and link-preview bots (which don't run JavaScript) get the content, title, description,
+  canonical and Open Graph tags; the page paints before JavaScript loads.
+- The stylesheet is inlined and the Latin font files are preloaded.
+- `main.tsx` hydrates only when `#root[data-prerendered-path]` equals the current path; any other page
+  is rendered in the browser from scratch. Browser-only state (saved preferences, the session check,
+  the booking widget via `useHydrated()`) loads after hydration so it can't disagree with the HTML.
+- Nothing time- or user-specific may be rendered into prerendered pages. A test
+  (`src/entry-server.test.tsx`) checks that no date is baked into the home page.
+
+**Hosting requirements (Phase 21):** serve `dist/<path>/index.html` for prerendered paths and
+fall back to `dist/app.html` for every other route. The web app's Content-Security-Policy must allow
+the inline `<style>`, the JSON-LD `<script type="application/ld+json">`, and React Router's inline
+hydration script (use hashes).

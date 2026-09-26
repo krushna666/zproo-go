@@ -38,6 +38,12 @@ export const usePreferences = create<PreferencesState>()(
       currency: 'INR',
       setCurrency: (currency) => set({ currency }),
     }),
-    { name: 'zproo.preferences', storage: createJSONStorage(() => safeLocalStorage) },
+    {
+      name: 'zproo.preferences',
+      storage: createJSONStorage(() => safeLocalStorage),
+      // Read saved preferences after hydration (main.tsx), so the first client render matches
+      // the prerendered HTML.
+      skipHydration: true,
+    },
   ),
 );

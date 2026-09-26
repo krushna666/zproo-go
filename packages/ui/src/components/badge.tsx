@@ -9,8 +9,8 @@ export const badgeVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground',
         soft: 'bg-primary-light text-primary',
-        success: 'bg-success/10 text-success',
-        warning: 'bg-warning/15 text-amber-700',
+        success: 'bg-success/10 text-green-800',
+        warning: 'bg-warning/15 text-amber-800',
         danger: 'bg-danger/10 text-danger',
         outline: 'border border-border text-muted',
       },

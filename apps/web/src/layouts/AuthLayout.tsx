@@ -33,7 +33,7 @@ export function AuthLayout() {
             <br />
             Go Further.
           </h2>
-          <ul className="space-y-3 text-base text-white/90">
+          <ul className="space-y-3 text-base text-white">
             {HIGHLIGHTS.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/15">
@@ -44,7 +44,7 @@ export function AuthLayout() {
             ))}
           </ul>
         </div>
-        <p className="relative text-sm text-white/75">{BRAND.description}</p>
+        <p className="relative text-sm text-white">{BRAND.description}</p>
       </aside>
       <main id="main" className="flex flex-col bg-card px-5 py-8 sm:px-10">
         <Link to="/" aria-label="ZPROO GO home" className="self-center lg:hidden">

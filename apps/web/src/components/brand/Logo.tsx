@@ -21,18 +21,22 @@ interface LogoProps {
 export function Logo({ height = 36, surface = 'none', className, priority = false }: LogoProps) {
   const { width: w, height: h } = BRAND.assets.logoSize;
   const img = (
-    <img
-      src={BRAND.assets.logo}
-      alt={BRAND.name}
-      width={Math.round((w / h) * height)}
-      height={height}
-      style={{ height, width: 'auto' }}
-      className={cn('block max-w-none select-none', surface === 'none' && className)}
-      draggable={false}
-      decoding="async"
-      loading={priority ? 'eager' : 'lazy'}
-      fetchPriority={priority ? 'high' : 'auto'}
-    />
+    <picture className={cn('contents')}>
+      {/* Lossless WebP of the official logo (pixel-identical, smaller); PNG for older browsers. */}
+      <source type="image/webp" srcSet={BRAND.assets.logo.replace(/\.png$/, '.webp')} />
+      <img
+        src={BRAND.assets.logo}
+        alt={BRAND.name}
+        width={Math.round((w / h) * height)}
+        height={height}
+        style={{ height, width: 'auto' }}
+        className={cn('block max-w-none select-none', surface === 'none' && className)}
+        draggable={false}
+        decoding="async"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+      />
+    </picture>
   );
   if (surface === 'none') return img;
   return (

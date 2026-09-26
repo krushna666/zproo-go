@@ -196,18 +196,4 @@ export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
   // Support & company — Phases 3, 17
   { path: '/help', title: 'Help center', description: 'Answers and 24×7 support.', phase: 17 },
   { path: '/contact', title: 'Contact us', description: 'Reach the ZPROO GO team.', phase: 17 },
-  { path: '/about', title: 'About ZPROO GO', description: 'One app for every journey.', phase: 3 },
-  {
-    path: '/terms',
-    title: 'Terms of use',
-    description: 'The terms that govern ZPROO GO.',
-    phase: 3,
-  },
-  { path: '/privacy', title: 'Privacy policy', description: 'How we protect your data.', phase: 3 },
-  {
-    path: '/refund-policy',
-    title: 'Refund policy',
-    description: 'Cancellations and refunds explained.',
-    phase: 3,
-  },
 ];

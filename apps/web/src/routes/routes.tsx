@@ -3,6 +3,7 @@ import { PageLoader } from '@/components/feedback/PageLoader';
 import { RouteError } from '@/components/feedback/RouteError';
 import { RedirectIfAuthenticated, RequireAuth, RequirePermission } from '@/features/auth/guards';
 import { PublicLayout } from '@/layouts/PublicLayout';
+import HomePage from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PUBLIC_ROUTES } from './routeMap';
 
@@ -26,7 +27,12 @@ export const routes: RouteObject[] = [
     errorElement: <RouteError />,
     hydrateFallbackElement: splash,
     children: [
-      { index: true, lazy: page(() => import('@/pages/HomePage')) },
+      // Eager: the landing page must paint without waiting for a second chunk.
+      { index: true, Component: HomePage },
+      { path: '/about', lazy: page(() => import('@/pages/company/AboutPage')) },
+      { path: '/terms', lazy: page(() => import('@/pages/company/TermsPage')) },
+      { path: '/privacy', lazy: page(() => import('@/pages/company/PrivacyPage')) },
+      { path: '/refund-policy', lazy: page(() => import('@/pages/company/RefundPolicyPage')) },
       ...publicPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
       {
         element: <RequireAuth />,

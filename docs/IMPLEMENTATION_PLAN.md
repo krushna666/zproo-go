@@ -2,7 +2,7 @@
 
 > Unified Mobility & Travel Super App — _"Travel Smarter. Go Further."_
 >
-> Status: **Phase 2 (authentication) complete**, awaiting approval to start Phase 3 (home page). Sections 0 and 16 record where things stood when the plan was written and what is still open.
+> Status: **Phase 3 (home page) complete**, awaiting approval to start Phase 4 (flights). Sections 0 and 16 record where things stood when the plan was written and what is still open.
 > This document is the reference for all 23 phases. Per-topic docs (`ARCHITECTURE.md`, `API.md`, `DATABASE.md`, …) are created in the phase that implements them.
 
 ---
@@ -424,5 +424,5 @@ The API validates all variables with Zod at boot and refuses to start with missi
 
 1. **Official logo file.** Still needed. Phase 1 uses the logo extracted, unmodified, from the supplied reference image (see [BRAND.md](BRAND.md)). Replace the PNGs at the same paths when the original file is available.
 2. **Brand red.** `#D9141E`, sampled from the references. Re-check against the original logo file.
-3. **Imagery.** Travel photography must be licensed. Proposed: free-licence stock (Unsplash/Pexels licence) downloaded into `public/assets/*` with attribution recorded in `docs/`, or your own licensed image set.
+3. **Imagery.** Still needed. The image pipeline and all 26 photo slots exist (illustrations shown meanwhile). This environment's network policy blocks stock-photo hosts, so either allow them or supply your own licensed photos (see `apps/web/assets-src/images/README.md`).
 4. **Admin placement.** Implemented as `/admin` inside `apps/web` (separate lazy chunk). It can move to a standalone `apps/admin` later if you want.

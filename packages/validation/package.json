@@ -12,6 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@zproo/config": "*",
+    "@zproo/types": "*",
     "zod": "^4.1.0"
   },
   "devDependencies": {

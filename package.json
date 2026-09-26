@@ -48,6 +48,9 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "deepmerge-ts": "^8.0.2"
+    "deepmerge-ts": "^8.0.2",
+    "tsup": {
+      "esbuild": "^0.28.2"
+    }
   }
 }

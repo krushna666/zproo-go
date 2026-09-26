@@ -11,9 +11,9 @@ ZPROO GO brings flights, buses, trains, hotels, cabs, bike taxis, holidays, parc
 corporate travel into one platform: a customer website, an admin panel, a REST + real-time API,
 and a PostgreSQL database.
 
-> **Status: Phase 2 (authentication) complete.** Mobile OTP sign-up and login, email/password,
-> Google/Apple sign-in, rotating refresh tokens, role-based permissions, profile, and a working admin
-> Users screen. Travel modules land phase by phase; see
+> **Status: Phase 3 (home page) complete.** Booking widget for all nine services with validated
+> search, the full marketing home page, company and policy pages, prerendered public pages, and an
+> image pipeline. Travel modules land phase by phase; see
 > [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
 ## Tech stack

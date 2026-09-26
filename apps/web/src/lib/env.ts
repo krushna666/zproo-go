@@ -15,5 +15,8 @@ const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
 export const env = {
   apiUrl: apiUrl.replace(/\/$/, ''),
-  siteUrl: readUrl('VITE_SITE_URL', import.meta.env.VITE_SITE_URL) ?? window.location.origin,
+  /** Absolute site URL. Empty only when prerendering without VITE_SITE_URL (canonical links are then omitted). */
+  siteUrl:
+    readUrl('VITE_SITE_URL', import.meta.env.VITE_SITE_URL) ??
+    (typeof window === 'undefined' ? '' : window.location.origin),
 };
