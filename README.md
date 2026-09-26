@@ -74,7 +74,8 @@ npm run preview -w @zproo/web    # or try it locally at http://localhost:4173
 ```
 
 `apps/web/dist` includes routing rules for Netlify/Cloudflare Pages (`_redirects`), Vercel
-(`vercel.json`), Apache (`.htaccess`) and GitHub Pages (`404.html`). For development with hot reload:
+(`vercel.json`), Apache (`.htaccess`), Windows/IIS (`web.config`) and GitHub Pages (`404.html`).
+Publishing on GoDaddy: [docs/DEPLOY-GODADDY.md](docs/DEPLOY-GODADDY.md). For development with hot reload:
 `npm run dev -w @zproo/web` (http://localhost:5173).
 
 In the demo, sign in with any Indian mobile number — the one-time code is shown on screen. Tickets
