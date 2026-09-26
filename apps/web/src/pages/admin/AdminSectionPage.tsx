@@ -4,7 +4,7 @@ import { Seo } from '@/components/seo/Seo';
 import { ADMIN_NAV } from '@/config/navigation';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
-/** Placeholder for admin sections until Phases 18–19 deliver them. */
+/** Placeholder for admin sections that are not built yet. */
 export default function AdminSectionPage() {
   const { section = '' } = useParams();
   const item = ADMIN_NAV.find((entry) => entry.segment === section);
@@ -23,7 +23,7 @@ export default function AdminSectionPage() {
       <Card>
         <CardHeader>
           <Badge variant="soft" className="self-start">
-            Arriving in phase {item.phase}
+            Coming soon
           </Badge>
           <CardTitle>{item.label} management is being built</CardTitle>
           <CardDescription>

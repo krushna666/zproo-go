@@ -11,13 +11,30 @@ ZPROO GO brings flights, buses, trains, hotels, cabs, bike taxis, holidays, parc
 corporate travel into one platform: a customer website, an admin panel, a REST + real-time API,
 and a PostgreSQL database.
 
-> **Status: Phase 5 (buses) complete.** Buses across Maharashtra and India: search, filters, a
-> live seat map (sleeper and seater, both decks, ladies seats), boarding and dropping points, and
-> the same secure booking, payment and e-ticket flow as flights. Phase 4 (flights): Flights can be searched, filtered, booked and paid for end
-> to end: one way, round trip and multi-city search, seat holds, idempotent booking, verified
-> payment (simulated gateway in development), PNR and a PDF e-ticket. Development uses a mock
-> timetable with fictional airlines. Travel modules land phase by phase; see
-> [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
+## What's included
+
+This release is a working **flights and buses** booking platform, built Maharashtra-first
+(Pune and Mumbai at the top of every list):
+
+| Area        | What works                                                                                                                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Accounts    | Sign up and sign in with mobile OTP, password, or Google; sessions with rotating refresh tokens; profile; role-based admin access                                                         |
+| Flights     | One way, round trip and multi-city search; filters and sorting; fare details; traveller details; review; payment; PNR and PDF e-ticket                                                    |
+| Buses       | City-to-city search; filters and sorting; live seat map (sleeper/seater, both decks, ladies-only seats); boarding and dropping points; travellers; payment; operator PNR and PDF e-ticket |
+| My bookings | Upcoming, past and cancelled flight and bus bookings, each linking to its ticket or payment                                                                                               |
+| Payments    | Server-side priced orders, signature verification, idempotent booking, seat holds that expire                                                                                             |
+| Admin       | Admin panel with user management (other sections show "Coming soon")                                                                                                                      |
+| Platform    | REST API with OpenAPI docs, PostgreSQL (Prisma), Redis caching and rate limits, PDF tickets, 330+ automated tests, CI                                                                     |
+
+Other services in the navigation (trains, hotels, cabs, bikes, holidays, parcel, corporate, wallet,
+offers) show a **Coming soon** page. The plan for them is in
+[docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
+
+> **Demo inventory.** Development uses built-in mock providers: fictional airlines and bus
+> operators and a simulated payment gateway (no money moves; tickets are watermarked "not valid
+> for travel"). Production refuses to start with these mocks — connect real flight, bus and
+> payment (e.g. Razorpay) providers and an SMS provider before going live. See
+> [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
 
 ## Tech stack
 
@@ -53,7 +70,7 @@ npm install                 # also generates the Prisma client
 cp .env.example .env        # one .env at the repo root serves every app
 npm run db:up               # Postgres + Redis via docker compose (skip if running locally)
 npm run db:migrate          # apply migrations
-npm run db:seed             # roles, permissions, settings, 100 demo users
+npm run db:seed             # roles, settings, demo users, flight timetable, bus network
 npm run dev                 # web → http://localhost:5173, API → http://localhost:5000
 ```
 
@@ -63,6 +80,9 @@ npm run dev                 # web → http://localhost:5173, API → http://loca
 - **Signing in locally:** use any mobile number. OTP codes are shown on screen and printed in the API
   terminal (development SMS provider). Seeded staff accounts, e.g. admin **9000000002**, support
   **9000000003**, are listed in [docs/DATABASE.md](docs/DATABASE.md#seed-data).
+- **Try a booking:** search Pune → New Delhi on `/flights` or Pune → Mumbai on `/buses`, pick a fare
+  or seats, sign in with any mobile number, and on the payment step choose **Pay** (or simulate a
+  failed payment first). Download the PDF e-ticket from the confirmation page or **My bookings**.
 - API tests use a separate `zproo_test` database, created automatically; Postgres and Redis must be running.
 
 ## Scripts

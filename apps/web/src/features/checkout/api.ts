@@ -28,6 +28,7 @@ export function useMyBookings() {
   return useQuery({
     queryKey: bookingKeys.bookings,
     queryFn: () => apiGet<BookingListItem[]>('/bookings'),
+    enabled: true,
   });
 }
 

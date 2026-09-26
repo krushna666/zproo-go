@@ -2,7 +2,7 @@
 
 > Unified Mobility & Travel Super App — _"Travel Smarter. Go Further."_
 >
-> Status: **Phase 5 (buses) complete**, awaiting approval to start Phase 6 (trains). Sections 0 and 16 record where things stood when the plan was written and what is still open.
+> Status: **Release 1 complete — flights and buses** (Phases 1–5). Phases 6+ are paused; their pages show "Coming soon". Sections 0 and 16 record where things stood when the plan was written and what is still open.
 > This document is the reference for all 23 phases. Per-topic docs (`ARCHITECTURE.md`, `API.md`, `DATABASE.md`, …) are created in the phase that implements them.
 
 ---

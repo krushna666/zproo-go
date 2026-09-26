@@ -111,20 +111,6 @@ export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
     phase: 13,
     requiresAuth: true,
   },
-  {
-    path: '/bookings',
-    title: 'My bookings',
-    description: 'Upcoming, completed and cancelled trips.',
-    phase: 15,
-    requiresAuth: true,
-  },
-  {
-    path: '/bookings/:id',
-    title: 'Booking details',
-    description: 'Tickets, invoices, cancellation and refunds.',
-    phase: 15,
-    requiresAuth: true,
-  },
   // Support & company — Phases 3, 17
   { path: '/help', title: 'Help center', description: 'Answers and 24×7 support.', phase: 17 },
   { path: '/contact', title: 'Contact us', description: 'Reach the ZPROO GO team.', phase: 17 },

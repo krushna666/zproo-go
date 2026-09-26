@@ -5,8 +5,8 @@ import { Seo } from '@/components/seo/Seo';
 import { useRouteMeta } from '@/routes/useRouteMeta';
 
 /**
- * Placeholder for routes whose module ships in a later phase. Keeps every navigation link
- * working (no 404s) and is replaced route-by-route as phases land.
+ * Placeholder for services not offered yet. Keeps every navigation link working (no 404s) and
+ * is replaced route by route as services launch.
  */
 export default function PlannedPage() {
   const meta = useRouteMeta();
@@ -19,19 +19,27 @@ export default function PlannedPage() {
       </span>
       {meta && (
         <Badge variant="soft" className="mb-4">
-          Arriving in phase {meta.phase}
+          Coming soon
         </Badge>
       )}
       <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1>
       {meta?.description && <p className="mt-3 text-lg text-muted">{meta.description}</p>}
       <p className="mt-2 text-sm text-muted">
-        This part of ZPROO GO is being built and isn't available yet.
+        This service isn't available yet. Flights and buses are open for booking today.
       </p>
-      <Button asChild variant="outline" className="mt-8">
-        <Link to="/">
-          <ArrowLeft aria-hidden /> Back to home
-        </Link>
-      </Button>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Button asChild>
+          <Link to="/flights">Book flights</Link>
+        </Button>
+        <Button asChild>
+          <Link to="/buses">Book buses</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/">
+            <ArrowLeft aria-hidden /> Back to home
+          </Link>
+        </Button>
+      </div>
     </section>
   );
 }

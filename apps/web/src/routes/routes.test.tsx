@@ -22,7 +22,8 @@ describe('routing', () => {
   ])('renders the planned page for %s', async (path, title, phase) => {
     renderRoute(path);
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(`Arriving in phase ${phase}`)).toBeInTheDocument();
+    expect(screen.getByText('Coming soon')).toBeInTheDocument();
+    expect(phase).toBeGreaterThan(5);
   });
 
   it('renders auth routes in the auth layout without the site header', async () => {

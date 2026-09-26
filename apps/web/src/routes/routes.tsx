@@ -45,6 +45,11 @@ export const routes: RouteObject[] = [
         element: <RequireAuth />,
         children: [
           { path: '/profile', lazy: page(() => import('@/pages/account/ProfilePage')) },
+          { path: '/bookings', lazy: page(() => import('@/pages/account/MyBookingsPage')) },
+          {
+            path: '/bookings/:id',
+            lazy: page(() => import('@/pages/account/BookingRedirectPage')),
+          },
           // Checkout: booking needs an account (tickets and payments belong to a user).
           {
             path: '/flights/booking',
