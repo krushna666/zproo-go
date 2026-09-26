@@ -1,5 +1,6 @@
 import type { BookingDetails, BookingListItem, PaymentOrder } from '@zproo/types';
 import { useQuery } from '@tanstack/react-query';
+import { env } from '@/lib/env';
 import { apiGet, apiPost, http } from '@/services/http';
 
 export const bookingKeys = {
@@ -51,6 +52,11 @@ export const checkoutApi = {
     apiPost<null>(`/payments/${paymentId}/fail`, { reason }),
   /** Fetched with the access token (a plain link can't send it), then saved via a blob URL. */
   async downloadTicket(reference: string): Promise<void> {
+    // Static mode has no PDF service: open the printable ticket (Print → Save as PDF).
+    if (env.staticMode) {
+      window.open(`/tickets/${encodeURIComponent(reference)}`, '_blank', 'noopener');
+      return;
+    }
     const res = await http.get<Blob>(`/bookings/${reference}/ticket.pdf`, { responseType: 'blob' });
     const url = URL.createObjectURL(res.data);
     const link = document.createElement('a');

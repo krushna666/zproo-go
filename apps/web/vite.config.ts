@@ -85,5 +85,7 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // Page tests mock the API client; the static engine has its own tests (src/static).
+    env: { VITE_DATA_SOURCE: 'api' },
   },
 }));

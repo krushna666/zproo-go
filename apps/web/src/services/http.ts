@@ -55,6 +55,11 @@ export const http = axios.create({
   timeout: 20_000,
   withCredentials: true,
   headers: { Accept: 'application/json' },
+  // Static mode answers API calls in the browser; the engine loads on the first call.
+  ...(env.staticMode && {
+    adapter: async (config: InternalAxiosRequestConfig) =>
+      (await import('@/static/server')).staticAdapter(config),
+  }),
 });
 
 interface AuthBridge {

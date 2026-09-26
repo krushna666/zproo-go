@@ -11,7 +11,7 @@ export const BRAND = {
     /** Official full-colour logo (transparent background). */
     logo: '/assets/brand/zproo-go-logo.png',
     /** Intrinsic pixel size of `logo`, used to reserve layout space and keep the aspect ratio. */
-    logoSize: { width: 286, height: 67 },
+    logoSize: { width: 302, height: 77 },
     favicon: '/assets/brand/favicon.png',
   },
   colors: {

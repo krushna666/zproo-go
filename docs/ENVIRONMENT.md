@@ -58,10 +58,11 @@ from the phase that starts using it.
 
 ## Web (public)
 
-| Variable                | Default        | Notes                                                          |
-| ----------------------- | -------------- | -------------------------------------------------------------- |
-| `VITE_API_URL`          | `/api`         | Empty in development → Vite proxies `/api` to the API          |
-| `VITE_SITE_URL`         | current origin | Absolute URL for canonical links and social cards              |
-| `VITE_GOOGLE_CLIENT_ID` |                | Same as `GOOGLE_OAUTH_CLIENT_ID`; shows "Continue with Google" |
-| `VITE_GOOGLE_MAPS_KEY`  |                | Phase 8. Browser key **restricted by HTTP referrer**           |
-| `VITE_RAZORPAY_KEY_ID`  |                | Phase 14. Public key ID only, never the secret                 |
+| Variable                | Default        | Notes                                                                                    |
+| ----------------------- | -------------- | ---------------------------------------------------------------------------------------- |
+| `VITE_DATA_SOURCE`      | `static`       | `static`: the site runs alone with demo data in the browser. `api`: use the ZPROO GO API |
+| `VITE_API_URL`          | `/api`         | Empty in development → Vite proxies `/api` to the API                                    |
+| `VITE_SITE_URL`         | current origin | Absolute URL for canonical links and social cards                                        |
+| `VITE_GOOGLE_CLIENT_ID` |                | Same as `GOOGLE_OAUTH_CLIENT_ID`; shows "Continue with Google"                           |
+| `VITE_GOOGLE_MAPS_KEY`  |                | Phase 8. Browser key **restricted by HTTP referrer**                                     |
+| `VITE_RAZORPAY_KEY_ID`  |                | Phase 14. Public key ID only, never the secret                                           |

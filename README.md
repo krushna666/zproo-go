@@ -61,13 +61,33 @@ prisma/       Schema, migrations, seed
 docs/         Architecture, API, database, environment, security, testing
 ```
 
-## Getting started
+## Static website (no server needed)
+
+The website runs **entirely in the browser** by default: flights, buses, sign-in, bookings,
+payments (simulated) and tickets all work from built-in demo data, and each visitor's account and
+bookings are kept in their own browser (localStorage). No API, database or Redis is needed.
+
+```bash
+npm install
+npm run build -w @zproo/web      # → apps/web/dist  (upload this folder to any static host)
+npm run preview -w @zproo/web    # or try it locally at http://localhost:4173
+```
+
+`apps/web/dist` includes routing rules for Netlify/Cloudflare Pages (`_redirects`), Vercel
+(`vercel.json`), Apache (`.htaccess`) and GitHub Pages (`404.html`). For development with hot reload:
+`npm run dev -w @zproo/web` (http://localhost:5173).
+
+In the demo, sign in with any Indian mobile number — the one-time code is shown on screen. Tickets
+open as a printable page (**Print → Save as PDF**). To use the real API instead, set
+`VITE_DATA_SOURCE=api` and follow the full setup below.
+
+## Getting started (full stack: website + API)
 
 Prerequisites: **Node.js 22** (see `.nvmrc`), **npm 10+**, and either Docker or local PostgreSQL 16 + Redis 7.
 
 ```bash
 npm install                 # also generates the Prisma client
-cp .env.example .env        # one .env at the repo root serves every app
+cp .env.example .env        # one .env at the repo root; set VITE_DATA_SOURCE=api
 npm run db:up               # Postgres + Redis via docker compose (skip if running locally)
 npm run db:migrate          # apply migrations
 npm run db:seed             # roles, settings, demo users, flight timetable, bus network

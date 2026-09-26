@@ -8,7 +8,7 @@ describe('Logo', () => {
     const img = screen.getByRole('img', { name: 'ZPROO GO' });
     expect(img).toHaveAttribute('src', '/assets/brand/zproo-go-logo.png');
     expect(img).toHaveAttribute('height', '40');
-    expect(img).toHaveAttribute('width', String(Math.round((286 / 67) * 40)));
+    expect(img).toHaveAttribute('width', String(Math.round((302 / 77) * 40)));
     expect(img).toHaveStyle({ height: '40px', width: 'auto' });
   });
 

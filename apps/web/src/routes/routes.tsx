@@ -95,6 +95,15 @@ export const routes: RouteObject[] = [
       },
     ],
   },
+  // Printable e-ticket: its own page (no site header/footer) so it prints cleanly.
+  {
+    element: <RequireAuth />,
+    errorElement: <RouteError />,
+    hydrateFallbackElement: splash,
+    children: [
+      { path: '/tickets/:reference', lazy: page(() => import('@/pages/account/TicketPage')) },
+    ],
+  },
   {
     path: '/admin',
     element: <RequirePermission permission="admin:access" />,

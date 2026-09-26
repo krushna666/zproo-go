@@ -5,6 +5,7 @@ import { Logo } from '@/components/brand/Logo';
 import { FOOTER_LINKS } from '@/config/navigation';
 import { SERVICES } from '@/config/services';
 import { ApiStatus } from '@/features/system/ApiStatus';
+import { env } from '@/lib/env';
 
 const PROMISES = [
   { icon: Zap, label: 'Fast & reliable' },
@@ -92,7 +93,7 @@ export function SiteFooter() {
               </li>
             ))}
           </ul>
-          {import.meta.env.DEV && <ApiStatus />}
+          {import.meta.env.DEV && !env.staticMode && <ApiStatus />}
         </div>
       </div>
     </footer>

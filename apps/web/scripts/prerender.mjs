@@ -26,6 +26,8 @@ const { render } = await import(pathToFileURL(path.join(ssrDir, 'entry-server.js
 
 const template = await readFile(path.join(dist, 'index.html'), 'utf8');
 await writeFile(path.join(dist, 'app.html'), template);
+// Hosts without rewrite rules (e.g. GitHub Pages) serve 404.html for unknown paths: same shell.
+await writeFile(path.join(dist, '404.html'), template);
 
 const HEAD_TAG = /<title>[\s\S]*?<\/title>|<meta\b[^>]*\/?>|<link\b[^>]*rel="canonical"[^>]*\/?>/g;
 const ROOT = /<div id="root">[\s\S]*?<\/div>\s*<\/div>\s*(?=<noscript>)/;
