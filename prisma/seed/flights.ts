@@ -37,6 +37,27 @@ const ROUTES: [string, string, number, number][] = [
   ['BOM', 'COK', 3800, 120],
   ['BLR', 'COK', 2400, 70],
   ['PNQ', 'BOM', 1900, 45],
+  // Maharashtra network
+  ['PNQ', 'NAG', 2900, 90],
+  ['BOM', 'NAG', 3100, 85],
+  ['DEL', 'NAG', 4100, 110],
+  ['BLR', 'NAG', 3500, 110],
+  ['BOM', 'IXU', 2400, 55],
+  ['DEL', 'IXU', 4300, 125],
+  ['BOM', 'KLH', 2200, 55],
+  ['BLR', 'KLH', 2600, 75],
+  ['HYD', 'SAG', 2600, 75],
+  ['DEL', 'SAG', 4600, 130],
+  ['DEL', 'ISK', 4200, 120],
+  ['HYD', 'NDC', 2400, 65],
+  ['BOM', 'SDW', 2300, 60],
+  ['NMI', 'DEL', 4300, 135],
+  ['NMI', 'BLR', 3400, 105],
+  ['NMI', 'GOI', 2300, 70],
+  ['PNQ', 'AMD', 3200, 85],
+  ['PNQ', 'MAA', 3400, 105],
+  ['PNQ', 'CCU', 5200, 150],
+  ['PNQ', 'JAI', 3900, 115],
 ];
 
 /** One-stop journeys: [from, via, to]. */
@@ -47,6 +68,9 @@ const CONNECTIONS: [string, string, string][] = [
   ['PNQ', 'BOM', 'DXB'],
   ['GOI', 'BOM', 'DEL'],
   ['HYD', 'BLR', 'DEL'],
+  ['NAG', 'BOM', 'GOI'],
+  ['KLH', 'BOM', 'DEL'],
+  ['IXU', 'BOM', 'BLR'],
 ];
 
 const SLOTS = [

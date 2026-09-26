@@ -38,7 +38,12 @@ export function PlaceCombobox({
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
-  const results = useMemo(() => filterPlaces(options, query).slice(0, 8), [options, query]);
+  // Browsing (empty query) shows every place under its heading; typing narrows to the best matches.
+  const results = useMemo(
+    () => (query.trim() ? filterPlaces(options, query).slice(0, 10) : [...options]),
+    [options, query],
+  );
+  const grouped = !query.trim() && options.some((o) => o.group);
 
   const choose = (option: PlaceOption) => {
     onChange(option.value);
@@ -115,7 +120,16 @@ export function PlaceCombobox({
           {results.length === 0 && (
             <li className="px-3 py-4 text-center text-sm text-muted">No matches for “{query}”</li>
           )}
-          {results.map((option, i) => (
+          {results.map((option, i) => [
+            grouped && option.group && option.group !== results[i - 1]?.group && (
+              <li
+                key={`group-${option.group}`}
+                role="presentation"
+                className="sticky -top-1.5 z-10 bg-card px-3 pb-1 pt-2.5 text-[11px] font-bold uppercase tracking-wider text-muted"
+              >
+                {option.group}
+              </li>
+            ),
             <li
               key={option.value}
               id={`${id}-opt-${option.value}`}
@@ -141,8 +155,8 @@ export function PlaceCombobox({
                 <span className="block truncate text-sm font-semibold">{option.label}</span>
                 <span className="block truncate text-xs text-muted">{option.detail}</span>
               </span>
-            </li>
-          ))}
+            </li>,
+          ])}
         </ul>
       )}
     </FieldShell>

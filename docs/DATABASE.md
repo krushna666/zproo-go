@@ -70,10 +70,19 @@ the same change twice.
 `npm run db:seed` loads, idempotently:
 
 - **Reference data** (every environment): 9 roles, 28 permissions, default system settings.
-- **Flight timetable** (development/test; the mock provider only): 26 airports, 6 fictional
-  airlines (Saffron Air, Monsoon Airways, Deccan Blue, Coral Wings, Himalaya Air, Gulf Star) and 116
-  services on 20 routes, including 6 one-stop connections. Fictional names keep demo inventory from
-  being mistaken for real airline fares.
+- **Flight timetable** (development/test; the mock provider only): 58 airports (12 in
+  Maharashtra), 6 fictional airlines (Saffron Air, Monsoon Airways, Deccan Blue, Coral Wings,
+  Himalaya Air, Gulf Star) and 222 services on 40 routes, including 9 one-stop connections. Half the
+  routes serve Maharashtra (Pune, Mumbai, Navi Mumbai, Nagpur, Chhatrapati Sambhajinagar, Kolhapur,
+  Shirdi, Nashik, Nanded, Sindhudurg). Fictional names keep demo inventory from being mistaken for
+  real airline fares.
+
+Search places (`packages/config/src/places.ts`) are listed Maharashtra first, starting with Pune,
+then the rest of India, then international: 58 airports, 102 cities (55 in Maharashtra, including
+every district headquarters and popular hill stations, beaches and pilgrimage towns) and 76 railway
+stations (38 in Maharashtra). Former names (Aurangabad, Ahmednagar, Osmanabad, Bombay…) are
+searchable.
+
 - **Demo users** (skipped when `NODE_ENV=production`): 100 users with deterministic Indian names,
   one account per staff role, customers, and some saved addresses. **No passwords are stored.**
   Sign in with mobile OTP; in development the code is shown on screen.

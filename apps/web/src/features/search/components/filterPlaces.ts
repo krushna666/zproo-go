@@ -8,9 +8,14 @@ export interface PlaceOption {
   keywords?: string;
   /** Short code badge in the list, e.g. "PNQ". */
   badge?: string;
+  /** Heading the option is listed under, e.g. "Maharashtra". */
+  group?: string;
 }
 
-/** Ranks prefix matches first, then substring matches; empty query shows everything. */
+/**
+ * Ranks exact codes, then name prefixes, then code prefixes, then any other match; empty query
+ * shows everything. Ties keep the list order, so Maharashtra places come first.
+ */
 export function filterPlaces(options: readonly PlaceOption[], query: string): PlaceOption[] {
   const q = query.trim().toLowerCase();
   if (!q) return [...options];
