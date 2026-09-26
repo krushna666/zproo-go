@@ -11,8 +11,9 @@ ZPROO GO brings flights, buses, trains, hotels, cabs, bike taxis, holidays, parc
 corporate travel into one platform: a customer website, an admin panel, a REST + real-time API,
 and a PostgreSQL database.
 
-> **Status: Phase 1 (foundation) complete.** The monorepo, design system, brand assets, API platform
-> and database foundation are in place. Travel modules land phase by phase — see
+> **Status: Phase 2 (authentication) complete.** Mobile OTP sign-up and login, email/password,
+> Google/Apple sign-in, rotating refresh tokens, role-based permissions, profile, and a working admin
+> Users screen. Travel modules land phase by phase; see
 > [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
 ## Tech stack
@@ -49,13 +50,17 @@ npm install                 # also generates the Prisma client
 cp .env.example .env        # one .env at the repo root serves every app
 npm run db:up               # Postgres + Redis via docker compose (skip if running locally)
 npm run db:migrate          # apply migrations
-npm run db:seed             # roles, permissions, settings
+npm run db:seed             # roles, permissions, settings, 100 demo users
 npm run dev                 # web → http://localhost:5173, API → http://localhost:5000
 ```
 
 - API docs (Swagger UI): http://localhost:5000/api/docs
 - Health: http://localhost:5000/api/health
 - In development the web app proxies `/api` to the API, and the footer shows a live API/DB/Redis status dot.
+- **Signing in locally:** use any mobile number. OTP codes are shown on screen and printed in the API
+  terminal (development SMS provider). Seeded staff accounts, e.g. admin **9000000002**, support
+  **9000000003**, are listed in [docs/DATABASE.md](docs/DATABASE.md#seed-data).
+- API tests use a separate `zproo_test` database, created automatically; Postgres and Redis must be running.
 
 ## Scripts
 

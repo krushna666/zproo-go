@@ -24,15 +24,19 @@ Turborepo runs `build`, `lint`, `typecheck` and `test` across workspaces with ca
 ## API (`apps/api`)
 
 ```
-server.ts          boot: env → logger → Prisma → Redis → app → listen; graceful shutdown
-app.ts             createApp(deps): middleware + routers, no side effects (testable with Supertest)
+server.ts          boot: env → logger → Prisma → Redis → services → app → listen; graceful shutdown
+container.ts       composition root: the only place concrete repositories, services and providers are wired
+app.ts             createApp(services): middleware + routers, no side effects (testable with Supertest)
 config/env.ts      Zod-validated environment; fails fast with names (never values) of bad vars
 middleware/        httpLogger (request IDs), security (Helmet, CORS), rateLimit, validate,
-                   notFound, errorHandler
-routes/            one router per module, mounted under /api
-controllers/       HTTP adapters only
-services/          business logic (HealthService today)
-repositories/      data access (Prisma, Redis)
+                   auth (authenticate, authorize), notFound, errorHandler
+routes/            one router per module, mounted under /api (health, auth, me, admin)
+controllers/       HTTP adapters only (read validated input, set cookies, send envelope)
+services/          business logic: Auth, Otp, Token, Password, Rbac, Audit, User, Health
+repositories/      data access with Prisma; accept a transaction client for multi-step writes
+providers/         external integrations behind interfaces: sms/, email/, identity/ (Google, Apple)
+models/            DTO mappers (e.g. toPublicUser — the only shape a user leaves the API in)
+validators/        route-specific Zod schemas (shared ones live in @zproo/validation)
 docs/              OpenAPI registry built from Zod schemas + Swagger UI router
 utils/             AppError hierarchy, response envelope, logger
 ```
@@ -54,14 +58,25 @@ components/           brand/Logo, layout/*, feedback/*, seo/Seo
 config/               service catalogue and navigation (single source for header/footer/search)
 features/<domain>/    API hooks (TanStack Query) and domain components
 services/http.ts      Axios instance; unwraps the envelope; normalises errors to ApiClientError
-store/                Zustand stores (UI preferences today; auth session in Phase 2)
+store/                Zustand stores (UI preferences)
+features/auth/        session store (access token in memory), refresh with cross-tab lock,
+                      guards (RequireAuth, RequirePermission), flows, form components
 styles/globals.css    design tokens (CSS variables) mapped into Tailwind's theme
 ```
 
 - Routes whose module has not shipped render `PlannedPage` (marked `noindex`), so navigation never
   breaks. Each phase replaces its placeholders with real pages.
-- The admin area (`/admin`) is a separate lazy chunk with its own layout. The API enforces
-  permissions; client-side guards (Phase 2) are only for UX.
+- The admin area (`/admin`) is a separate lazy chunk with its own layout, behind
+  `RequirePermission("admin:access")`. The API enforces permissions; client-side guards are only for UX.
+
+## Authentication flow (web)
+
+```
+page load ──(had a session before?)──> POST /auth/refresh (cookie) ──> access token in memory
+API call ──> Authorization: Bearer <access> ──401──> refresh once (Web Lock across tabs) ──> replay
+sign in  ──> { user, accessToken } + HttpOnly refresh cookie (Path=/api/auth)
+```
+
 - Page metadata (title, description, canonical, Open Graph, Twitter) uses React 19's native
   `<title>`/`<meta>` hoisting via `<Seo />`.
 - Mobile gets its own navigation model: app-style bottom navigation plus a slide-in menu.

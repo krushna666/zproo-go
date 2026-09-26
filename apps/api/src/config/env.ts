@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
@@ -32,15 +33,40 @@ const envSchema = z
     RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
     ENABLE_API_DOCS: booleanString.optional(),
 
-    // Used from Phase 2 (authentication). Required in production.
+    // Authentication. Secrets are required in production; development generates throwaway ones.
     JWT_SECRET: z.string().min(32, 'must be at least 32 characters').optional(),
     JWT_REFRESH_SECRET: z.string().min(32, 'must be at least 32 characters').optional(),
+    JWT_ACCESS_TTL: z
+      .string()
+      .regex(/^\d+[smh]$/, 'use a number followed by s, m or h, e.g. 15m')
+      .default('15m'),
+    REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+    COOKIE_DOMAIN: z.string().optional(),
+    GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+    APPLE_CLIENT_ID: z.string().optional(),
+    SMS_PROVIDER: z.enum(['console']).default('console'),
+    EMAIL_PROVIDER: z.enum(['console']).default('console'),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
     for (const key of ['JWT_SECRET', 'JWT_REFRESH_SECRET'] as const) {
       if (!env[key])
         ctx.addIssue({ code: 'custom', path: [key], message: 'is required in production' });
+    }
+    // Console providers print one-time codes; they must never run in production.
+    if (env.SMS_PROVIDER === 'console') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMS_PROVIDER'],
+        message: 'console provider is not allowed in production',
+      });
+    }
+    if (env.EMAIL_PROVIDER === 'console') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['EMAIL_PROVIDER'],
+        message: 'console provider is not allowed in production',
+      });
     }
     if (env.JWT_SECRET && env.JWT_SECRET === env.JWT_REFRESH_SECRET) {
       ctx.addIssue({
@@ -52,6 +78,11 @@ const envSchema = z
   })
   .transform((env) => ({
     ...env,
+    // Outside production, missing secrets are replaced with random ones (sessions reset on restart).
+    ephemeralSecrets: !env.JWT_SECRET || !env.JWT_REFRESH_SECRET,
+    JWT_SECRET: env.JWT_SECRET ?? randomBytes(48).toString('base64url'),
+    JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET ?? randomBytes(48).toString('base64url'),
+    accessTokenTtlSeconds: durationToSeconds(env.JWT_ACCESS_TTL),
     corsOrigins: (env.CORS_ORIGINS ?? env.FRONTEND_URL)
       .split(',')
       .map((origin) => origin.trim().replace(/\/$/, ''))
@@ -61,6 +92,12 @@ const envSchema = z
   }));
 
 export type Env = z.infer<typeof envSchema>;
+
+function durationToSeconds(value: string): number {
+  const amount = Number(value.slice(0, -1));
+  const unit = value.slice(-1);
+  return amount * (unit === 'h' ? 3600 : unit === 'm' ? 60 : 1);
+}
 
 /**
  * Validates environment variables. The error lists variable names and problems only —

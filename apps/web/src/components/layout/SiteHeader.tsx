@@ -8,6 +8,7 @@ import { useHotkey } from '@/hooks/useHotkey';
 import { CurrencySelect } from './CurrencySelect';
 import { MobileMenu } from './MobileMenu';
 import { QuickSearchDialog } from './QuickSearchDialog';
+import { UserMenu } from './UserMenu';
 
 const utilityLink =
   'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-foreground/80 transition-colors hover:bg-background hover:text-foreground';
@@ -61,9 +62,9 @@ export function SiteHeader() {
             <CircleHelp aria-hidden className="size-4 text-primary" /> Help
           </NavLink>
           <CurrencySelect className="hidden md:block" />
-          <Button asChild size="sm" className="hidden md:inline-flex">
-            <Link to="/login">Login / Sign up</Link>
-          </Button>
+          <div className="hidden md:block">
+            <UserMenu />
+          </div>
           <Button
             variant="ghost"
             size="icon"

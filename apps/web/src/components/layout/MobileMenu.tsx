@@ -1,9 +1,12 @@
 import { Button, DialogTitle, Separator, Sheet, SheetContent } from '@zproo/ui';
-import { BadgePercent, CircleHelp, LogIn } from 'lucide-react';
+import { BadgePercent, CircleHelp, LogIn, LogOut } from 'lucide-react';
 import { useRef } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Logo } from '@/components/brand/Logo';
 import { SERVICES } from '@/config/services';
+import { UserAvatar } from '@/features/auth/components/UserAvatar';
+import { signOut } from '@/features/auth/session';
+import { useAuthStore } from '@/features/auth/store';
 import { CurrencySelect } from './CurrencySelect';
 
 interface MobileMenuProps {
@@ -13,6 +16,8 @@ interface MobileMenuProps {
 
 export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
   const close = () => onOpenChange(false);
+  const user = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
   const panelRef = useRef<HTMLDivElement>(null);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -31,11 +36,23 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
           <DialogTitle className="sr-only">Menu</DialogTitle>
         </div>
         <div className="flex flex-col gap-5 p-5">
-          <Button asChild size="lg" className="w-full">
-            <Link to="/login" onClick={close}>
-              <LogIn aria-hidden /> Login / Sign up
-            </Link>
-          </Button>
+          {user ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-background p-3">
+              <UserAvatar name={user.fullName} src={user.avatarUrl} size={44} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold">{user.fullName}</p>
+                <Link to="/profile" onClick={close} className="text-sm font-semibold text-primary">
+                  View profile
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <Button asChild size="lg" className="w-full">
+              <Link to="/login" onClick={close}>
+                <LogIn aria-hidden /> Login / Sign up
+              </Link>
+            </Button>
+          )}
           <nav aria-label="Services">
             <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
               Book travel
@@ -75,6 +92,20 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
                 <CircleHelp aria-hidden className="size-5 text-primary" /> Help & support
               </Link>
             </li>
+            {user && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
+                    void signOut().finally(() => navigate('/'));
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left hover:bg-background"
+                >
+                  <LogOut aria-hidden className="size-5 text-primary" /> Sign out
+                </button>
+              </li>
+            )}
           </ul>
           <CurrencySelect className="self-start" />
         </div>

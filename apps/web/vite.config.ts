@@ -25,13 +25,14 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         // Framework code changes rarely; a separate chunk keeps it cached across deploys.
+        // No catch-all vendor group: other libraries (zod, react-hook-form, …) must stay in the
+        // lazy chunks of the pages that use them, not in the initial download.
         advancedChunks: {
           groups: [
             {
               name: 'react',
               test: /node_modules[\\/](react|react-dom|react-router|scheduler|cookie|set-cookie-parser)[\\/]/,
             },
-            { name: 'vendor', test: /node_modules[\\/]/ },
           ],
         },
       },

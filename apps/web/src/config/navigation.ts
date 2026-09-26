@@ -77,10 +77,10 @@ const admin = (label: string, segment: string, icon: LucideIcon, phase = 18): Ad
   path: segment ? `/admin/${segment}` : '/admin',
 });
 
-/** Admin sidebar. Items are filtered by permission once authentication lands (Phase 2). */
+/** Admin sidebar. Section pages arrive in Phases 18–19; Users is live from Phase 2. */
 export const ADMIN_NAV: readonly AdminNavItem[] = [
   admin('Dashboard', '', LayoutDashboard),
-  admin('Users', 'users', Users),
+  admin('Users', 'users', Users, 2),
   admin('Bookings', 'bookings', CalendarCheck),
   admin('Flights', 'flights', Plane),
   admin('Buses', 'buses', Bus),

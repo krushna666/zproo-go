@@ -2,6 +2,8 @@ import { Router } from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { buildOpenApiDocument } from './openapi';
+// Each module's path docs register themselves with the shared registry on import.
+import './paths/auth';
 
 /** Serves `/api/docs` (Swagger UI) and `/api/docs/openapi.json`. */
 export function docsRouter(version: string): Router {

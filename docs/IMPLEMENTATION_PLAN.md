@@ -2,7 +2,7 @@
 
 > Unified Mobility & Travel Super App — _"Travel Smarter. Go Further."_
 >
-> Status: **Phase 1 (foundation) complete**, awaiting approval to start Phase 2 (authentication). Sections 0 and 16 record where things stood when the plan was written and what is still open.
+> Status: **Phase 2 (authentication) complete**, awaiting approval to start Phase 3 (home page). Sections 0 and 16 record where things stood when the plan was written and what is still open.
 > This document is the reference for all 23 phases. Per-topic docs (`ARCHITECTURE.md`, `API.md`, `DATABASE.md`, …) are created in the phase that implements them.
 
 ---

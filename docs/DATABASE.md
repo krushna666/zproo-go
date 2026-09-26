@@ -46,6 +46,27 @@ A test in `apps/api` asserts the shared enums equal the Prisma enums.
 Soft-deleted users keep their unique `phone`/`email`. Account deletion (Phase 2) anonymises
 those fields so the number can be registered again.
 
+## Seed data
+
+`npm run db:seed` loads, idempotently:
+
+- **Reference data** (every environment): 9 roles, 28 permissions, default system settings.
+- **Demo users** (skipped when `NODE_ENV=production`): 100 users with deterministic Indian names,
+  one account per staff role, customers, and some saved addresses. **No passwords are stored.**
+  Sign in with mobile OTP; in development the code is shown on screen.
+
+| Role             | Mobile number           |
+| ---------------- | ----------------------- |
+| SUPER_ADMIN      | 9000000001              |
+| ADMIN            | 9000000002              |
+| SUPPORT          | 9000000003              |
+| OPERATOR         | 9000000004              |
+| DRIVER           | 9000000005, 9000000006  |
+| HOTEL_PARTNER    | 9000000007              |
+| TRAVEL_PARTNER   | 9000000008              |
+| CORPORATE_ADMIN  | 9000000009              |
+| Customers (USER) | 9000000010 – 9000000100 |
+
 ## Workflow
 
 ```bash

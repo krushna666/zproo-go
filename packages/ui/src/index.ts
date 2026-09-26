@@ -19,6 +19,15 @@ export {
   Sheet,
   SheetContent,
 } from './components/dialog';
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './components/dropdown-menu';
 export { Input } from './components/input';
 export { Label } from './components/label';
 export { Separator } from './components/separator';

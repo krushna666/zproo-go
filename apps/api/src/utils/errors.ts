@@ -31,6 +31,36 @@ export class AuthenticationError extends AppError {
   }
 }
 
+export class InvalidCredentialsError extends AppError {
+  constructor(message = 'Incorrect mobile number, email or password') {
+    super(message, 401, ErrorCode.INVALID_CREDENTIALS);
+  }
+}
+
+export class InvalidOtpError extends AppError {
+  constructor(message = 'Incorrect code. Please try again.') {
+    super(message, 400, ErrorCode.INVALID_OTP);
+  }
+}
+
+export class OtpExpiredError extends AppError {
+  constructor(message = 'This code has expired. Request a new one.') {
+    super(message, 400, ErrorCode.OTP_EXPIRED);
+  }
+}
+
+export class AccountDisabledError extends AppError {
+  constructor(message = 'This account is disabled. Please contact support.') {
+    super(message, 403, ErrorCode.ACCOUNT_DISABLED);
+  }
+}
+
+export class ProviderNotConfiguredError extends AppError {
+  constructor(message = 'This sign-in method is not available') {
+    super(message, 400, ErrorCode.PROVIDER_NOT_CONFIGURED);
+  }
+}
+
 export class AuthorizationError extends AppError {
   constructor(message = 'You do not have permission to perform this action') {
     super(message, 403, ErrorCode.FORBIDDEN);

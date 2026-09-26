@@ -1,10 +1,10 @@
 import { createServer } from 'node:http';
 import { createApp } from './app';
 import { loadEnvFiles, parseEnv } from './config/env';
+import { createServices } from './container';
 import { createPrismaClient } from './lib/prisma';
+import { redisRateLimitStore } from './lib/rateLimitStore';
 import { createRedisClient } from './lib/redis';
-import { databaseCheck, redisCheck } from './repositories/health.repository';
-import { HealthService } from './services/health.service';
 import { createLogger } from './utils/logger';
 
 loadEnvFiles();
@@ -24,8 +24,14 @@ await Promise.race([
   new Promise((resolve) => setTimeout(resolve, 3_000).unref()),
 ]);
 
-const health = new HealthService([databaseCheck(prisma), redisCheck(redis)], env.APP_VERSION);
-const app = createApp({ env, logger, health });
+if (env.ephemeralSecrets) {
+  logger.warn(
+    'JWT_SECRET/JWT_REFRESH_SECRET not set — using random secrets; sessions reset on restart',
+  );
+}
+
+const services = createServices({ env, logger, prisma, redis });
+const app = createApp({ env, logger, services, rateLimitStore: redisRateLimitStore(redis) });
 const server = createServer(app);
 
 server.listen(env.PORT, () => {

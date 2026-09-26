@@ -99,12 +99,32 @@ describe('security', () => {
 });
 
 describe('API docs', () => {
-  it('serves the OpenAPI document', async () => {
+  it('serves the OpenAPI document for every module', async () => {
     const res = await request(buildTestApp()).get('/api/docs/openapi.json').expect(200);
     expect(res.body.openapi).toBe('3.1.0');
     expect(Object.keys(res.body.paths)).toEqual(
-      expect.arrayContaining(['/health', '/health/ready', '/health/live']),
+      expect.arrayContaining([
+        '/health',
+        '/health/ready',
+        '/health/live',
+        '/auth/send-otp',
+        '/auth/verify-otp',
+        '/auth/register',
+        '/auth/login',
+        '/auth/social/{provider}',
+        '/auth/refresh',
+        '/auth/logout',
+        '/auth/logout-all',
+        '/auth/forgot-password',
+        '/auth/reset-password',
+        '/me',
+        '/admin/users',
+      ]),
     );
+    const login = res.body.paths['/auth/login'].post.requestBody.content['application/json'].schema;
+    expect(login.properties).toHaveProperty('identifier');
+    expect(login.properties).toHaveProperty('password');
+    expect(res.body.components.securitySchemes).toHaveProperty('bearerAuth');
   });
 
   it('serves Swagger UI', async () => {

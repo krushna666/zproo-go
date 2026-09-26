@@ -1,9 +1,10 @@
 import type { RouteObject } from 'react-router';
 import { PageLoader } from '@/components/feedback/PageLoader';
 import { RouteError } from '@/components/feedback/RouteError';
+import { RedirectIfAuthenticated, RequireAuth, RequirePermission } from '@/features/auth/guards';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { AUTH_ROUTES, PUBLIC_ROUTES } from './routeMap';
+import { PUBLIC_ROUTES } from './routeMap';
 
 /** Route-level code splitting: each page (and the whole admin area) loads on demand. */
 const page = (loader: () => Promise<{ default: React.ComponentType }>) => async () => ({
@@ -15,6 +16,9 @@ const plannedPage = page(() => import('@/pages/PlannedPage'));
 /** Shown while the first route's code loads (continues the index.html boot splash). */
 const splash = <PageLoader fullscreen />;
 
+const publicPlanned = PUBLIC_ROUTES.filter((r) => !r.requiresAuth);
+const accountPlanned = PUBLIC_ROUTES.filter((r) => r.requiresAuth);
+
 export const routes: RouteObject[] = [
   {
     path: '/',
@@ -23,7 +27,14 @@ export const routes: RouteObject[] = [
     hydrateFallbackElement: splash,
     children: [
       { index: true, lazy: page(() => import('@/pages/HomePage')) },
-      ...PUBLIC_ROUTES.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
+      ...publicPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
+      {
+        element: <RequireAuth />,
+        children: [
+          { path: '/profile', lazy: page(() => import('@/pages/account/ProfilePage')) },
+          ...accountPlanned.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
+        ],
+      },
       // Eager: also used by the error boundary, so it is already in the main bundle.
       { path: '*', Component: NotFoundPage },
     ],
@@ -32,25 +43,42 @@ export const routes: RouteObject[] = [
     lazy: async () => ({ Component: (await import('@/layouts/AuthLayout')).AuthLayout }),
     errorElement: <RouteError />,
     hydrateFallbackElement: splash,
-    children: AUTH_ROUTES.map((meta) => ({ path: meta.path, handle: meta, lazy: plannedPage })),
+    children: [
+      {
+        element: <RedirectIfAuthenticated />,
+        children: [
+          { path: '/login', lazy: page(() => import('@/pages/auth/LoginPage')) },
+          { path: '/signup', lazy: page(() => import('@/pages/auth/SignupPage')) },
+          { path: '/verify-otp', lazy: page(() => import('@/pages/auth/VerifyOtpPage')) },
+          { path: '/forgot-password', lazy: page(() => import('@/pages/auth/ForgotPasswordPage')) },
+          { path: '/reset-password', lazy: page(() => import('@/pages/auth/ResetPasswordPage')) },
+        ],
+      },
+    ],
   },
   {
     path: '/admin',
-    lazy: async () => ({ Component: (await import('@/layouts/AdminLayout')).AdminLayout }),
+    element: <RequirePermission permission="admin:access" />,
     errorElement: <RouteError />,
     hydrateFallbackElement: splash,
     children: [
       {
-        index: true,
-        handle: {
-          path: '/admin',
-          title: 'Admin dashboard',
-          description: 'Users, bookings, revenue, refunds and active drivers at a glance.',
-          phase: 18,
-        },
-        lazy: plannedPage,
+        lazy: async () => ({ Component: (await import('@/layouts/AdminLayout')).AdminLayout }),
+        children: [
+          {
+            index: true,
+            handle: {
+              path: '/admin',
+              title: 'Admin dashboard',
+              description: 'Users, bookings, revenue, refunds and active drivers at a glance.',
+              phase: 18,
+            },
+            lazy: plannedPage,
+          },
+          { path: 'users', lazy: page(() => import('@/pages/admin/AdminUsersPage')) },
+          { path: ':section', lazy: page(() => import('@/pages/admin/AdminSectionPage')) },
+        ],
       },
-      { path: ':section', lazy: page(() => import('@/pages/admin/AdminSectionPage')) },
     ],
   },
 ];

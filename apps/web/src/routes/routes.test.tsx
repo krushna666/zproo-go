@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { renderRoute } from '@/test/render';
+import { makeUser, renderRoute, supportUser } from '@/test/render';
 
 describe('routing', () => {
   it('renders the home page inside the public layout', async () => {
@@ -18,7 +18,7 @@ describe('routing', () => {
   it.each([
     ['/flights', 'Flights', 4],
     ['/buses/abc/seats', 'Choose seats', 5],
-    ['/wallet', 'ZPROO Wallet', 13],
+    ['/offers', 'Offers', 13],
   ])('renders the planned page for %s', async (path, title, phase) => {
     renderRoute(path);
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe('routing', () => {
   });
 
   it('renders the admin shell with the full sidebar', async () => {
-    renderRoute('/admin/refunds');
+    renderRoute('/admin/refunds', supportUser());
     expect(await screen.findByRole('heading', { level: 1, name: 'Refunds' })).toBeInTheDocument();
     const nav = screen.getByRole('navigation', { name: 'Admin' });
     expect(within(nav).getAllByRole('link')).toHaveLength(24);
@@ -50,7 +50,7 @@ describe('routing', () => {
   });
 
   it('renders 404 for unknown admin sections', async () => {
-    renderRoute('/admin/nope');
+    renderRoute('/admin/nope', supportUser());
     expect(await screen.findByRole('heading', { name: /wrong turn/i })).toBeInTheDocument();
   });
 
@@ -65,5 +65,68 @@ describe('routing', () => {
     );
     await screen.findByRole('heading', { level: 1, name: 'Buses' });
     expect(router.state.location.pathname).toBe('/buses');
+  });
+});
+
+describe('route guards', () => {
+  it('sends signed-out visitors to login and remembers where they were going', async () => {
+    const { router } = renderRoute('/bookings?tab=upcoming');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Welcome back' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.search).toBe('?next=%2Fbookings%3Ftab%3Dupcoming');
+  });
+
+  it.each(['/wallet', '/bookings', '/bookings/ZP-2026-7K3QX9', '/profile'])(
+    'protects the account page %s',
+    async (path) => {
+      const { router } = renderRoute(path);
+      await screen.findByRole('heading', { level: 1, name: 'Welcome back' });
+      expect(router.state.location.pathname).toBe('/login');
+    },
+  );
+
+  it('shows account pages to signed-in users', async () => {
+    renderRoute('/wallet', makeUser());
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'ZPROO Wallet' }),
+    ).toBeInTheDocument();
+  });
+
+  it('waits for the session check instead of redirecting too early', async () => {
+    renderRoute('/profile', 'loading');
+    expect(await screen.findByRole('status')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Welcome back' })).not.toBeInTheDocument();
+  });
+
+  it('shows 403 to signed-in users without admin access', async () => {
+    renderRoute('/admin', makeUser());
+    expect(
+      await screen.findByRole('heading', { name: "You don't have access to this page" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Admin' })).not.toBeInTheDocument();
+  });
+
+  it('sends signed-out visitors from admin to login', async () => {
+    const { router } = renderRoute('/admin/users');
+    await screen.findByRole('heading', { level: 1, name: 'Welcome back' });
+    expect(router.state.location.search).toBe('?next=%2Fadmin%2Fusers');
+  });
+
+  it('moves signed-in users away from the login page', async () => {
+    const { router } = renderRoute('/login?next=/wallet', makeUser());
+    await screen.findByRole('heading', { level: 1, name: 'ZPROO Wallet' });
+    expect(router.state.location.pathname).toBe('/wallet');
+  });
+
+  it('shows the account menu instead of the login button when signed in', async () => {
+    const user = userEvent.setup();
+    renderRoute('/', supportUser());
+    await screen.findByRole('heading', { level: 1, name: /travel smarter/i });
+    expect(screen.queryByRole('link', { name: 'Login / Sign up' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /account menu/i }));
+    expect(await screen.findByRole('menuitem', { name: /admin panel/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /sign out/i })).toBeInTheDocument();
   });
 });

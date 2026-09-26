@@ -8,6 +8,8 @@ export interface PlannedRoute {
   title: string;
   description: string;
   phase: number;
+  /** Account pages: only for signed-in users. */
+  requiresAuth?: boolean;
 }
 
 export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
@@ -175,24 +177,21 @@ export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
     title: 'ZPROO Wallet',
     description: 'Add money, pay faster and earn cashback.',
     phase: 13,
+    requiresAuth: true,
   },
   {
     path: '/bookings',
     title: 'My bookings',
     description: 'Upcoming, completed and cancelled trips.',
     phase: 15,
+    requiresAuth: true,
   },
   {
     path: '/bookings/:id',
     title: 'Booking details',
     description: 'Tickets, invoices, cancellation and refunds.',
     phase: 15,
-  },
-  {
-    path: '/profile',
-    title: 'My profile',
-    description: 'Account, travellers, addresses and settings.',
-    phase: 2,
+    requiresAuth: true,
   },
   // Support & company — Phases 3, 17
   { path: '/help', title: 'Help center', description: 'Answers and 24×7 support.', phase: 17 },
@@ -210,38 +209,5 @@ export const PUBLIC_ROUTES: readonly PlannedRoute[] = [
     title: 'Refund policy',
     description: 'Cancellations and refunds explained.',
     phase: 3,
-  },
-];
-
-export const AUTH_ROUTES: readonly PlannedRoute[] = [
-  {
-    path: '/login',
-    title: 'Welcome back',
-    description: 'Log in with your mobile number or email.',
-    phase: 2,
-  },
-  {
-    path: '/signup',
-    title: 'Create your account',
-    description: 'Sign up with your mobile number in seconds.',
-    phase: 2,
-  },
-  {
-    path: '/verify-otp',
-    title: 'Verify OTP',
-    description: 'Enter the 6-digit code sent to your mobile.',
-    phase: 2,
-  },
-  {
-    path: '/forgot-password',
-    title: 'Forgot password',
-    description: 'We will send you a reset code.',
-    phase: 2,
-  },
-  {
-    path: '/reset-password',
-    title: 'Reset password',
-    description: 'Choose a new password.',
-    phase: 2,
   },
 ];

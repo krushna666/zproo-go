@@ -1,97 +1,26 @@
 /**
- * Seeds reference data. Idempotent — safe to run repeatedly (`npm run db:seed`).
- * Phase 1: roles, permissions and default system settings.
- * Later phases extend this with users, inventory and transactional demo data.
+ * Seeds the database (`npm run db:seed`). Idempotent — safe to run repeatedly.
+ * Reference data (roles, permissions, settings) plus development demo data.
  */
 import { PrismaClient } from '@prisma/client';
-import { PERMISSION_DESCRIPTIONS, ROLE_PERMISSIONS, RoleName } from '@zproo/types';
+import { seedDemoUsers } from './seed/demoUsers';
+import { seedReferenceData } from './seed/reference';
 
 const prisma = new PrismaClient();
 
-const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
-  USER: 'Customer',
-  ADMIN: 'Platform administrator',
-  SUPER_ADMIN: 'Full access including roles and system settings',
-  SUPPORT: 'Customer support agent',
-  OPERATOR: 'Operations: inventory, bookings and drivers',
-  DRIVER: 'Cab or bike driver',
-  HOTEL_PARTNER: 'Hotel partner managing own properties',
-  TRAVEL_PARTNER: 'Travel partner managing own inventory',
-  CORPORATE_ADMIN: 'Administrator of a corporate account',
-};
-
-const SYSTEM_SETTINGS: { key: string; value: unknown; description: string }[] = [
-  {
-    key: 'booking.holdMinutes',
-    value: 10,
-    description: 'Minutes a seat or room is held before payment',
-  },
-  { key: 'otp.ttlSeconds', value: 300, description: 'OTP validity in seconds' },
-  { key: 'otp.resendSeconds', value: 60, description: 'Minimum seconds between OTP sends' },
-  {
-    key: 'wallet.maxBalancePaise',
-    value: 20000000,
-    description: 'Maximum wallet balance (₹2,00,000)',
-  },
-  { key: 'support.hours', value: '24x7', description: 'Customer support availability' },
-];
-
-async function seedPermissions() {
-  for (const [key, description] of Object.entries(PERMISSION_DESCRIPTIONS)) {
-    await prisma.permission.upsert({
-      where: { key },
-      update: { description },
-      create: { key, description },
-    });
-  }
-}
-
-async function seedRoles() {
-  const permissions = await prisma.permission.findMany({ select: { id: true, key: true } });
-  const idByKey = new Map(permissions.map((p) => [p.key, p.id]));
-
-  for (const name of Object.values(RoleName)) {
-    const role = await prisma.role.upsert({
-      where: { name },
-      update: { description: ROLE_DESCRIPTIONS[name] },
-      create: { name, description: ROLE_DESCRIPTIONS[name], isSystem: true },
-    });
-    const wanted = ROLE_PERMISSIONS[name].map((key) => {
-      const id = idByKey.get(key);
-      if (!id) throw new Error(`Permission ${key} missing — seedPermissions must run first`);
-      return id;
-    });
-    // Replace the role's permission set so removals in code propagate to the database.
-    await prisma.$transaction([
-      prisma.rolePermission.deleteMany({ where: { roleId: role.id } }),
-      prisma.rolePermission.createMany({
-        data: wanted.map((permissionId) => ({ roleId: role.id, permissionId })),
-      }),
-    ]);
-  }
-}
-
-async function seedSettings() {
-  for (const setting of SYSTEM_SETTINGS) {
-    await prisma.systemSetting.upsert({
-      where: { key: setting.key },
-      // Never overwrite values an admin may have changed.
-      update: {},
-      create: { key: setting.key, value: setting.value as never, description: setting.description },
-    });
-  }
-}
-
 async function main() {
-  await seedPermissions();
-  await seedRoles();
-  await seedSettings();
-  const [roles, permissions, settings] = await Promise.all([
+  await seedReferenceData(prisma);
+  const demo = await seedDemoUsers(prisma);
+  const [roles, permissions, settings, users] = await Promise.all([
     prisma.role.count(),
     prisma.permission.count(),
     prisma.systemSetting.count(),
+    prisma.user.count(),
   ]);
-  console.info(`Seed complete: ${roles} roles, ${permissions} permissions, ${settings} settings`);
+  console.info(
+    `Seed complete: ${roles} roles, ${permissions} permissions, ${settings} settings, ${users} users`,
+  );
+  if (demo.printed) console.info(demo.printed);
 }
 
 main()

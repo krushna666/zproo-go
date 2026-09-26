@@ -1,4 +1,4 @@
 {
   "extends": "../packages/config/tsconfig/node.json",
-  "include": ["seed.ts"]
+  "include": ["seed.ts", "seed/**/*.ts"]
 }

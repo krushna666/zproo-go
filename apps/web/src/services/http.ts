@@ -1,5 +1,5 @@
 import type { ApiFailure, ApiSuccess, ErrorCode, FieldIssue } from '@zproo/types';
-import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import { env } from '@/lib/env';
 
 export type ClientErrorCode = ErrorCode | 'NETWORK_ERROR' | 'TIMEOUT';
@@ -57,9 +57,42 @@ export const http = axios.create({
   headers: { Accept: 'application/json' },
 });
 
-http.interceptors.response.use(undefined, (error: unknown) =>
-  Promise.reject(toApiClientError(error)),
-);
+interface AuthBridge {
+  getAccessToken: () => string | null;
+  /** Renews the session; resolves to the new access token, or null when signed out. */
+  refresh: () => Promise<string | null>;
+}
+
+let auth: AuthBridge = { getAccessToken: () => null, refresh: async () => null };
+
+/** Registered by the auth feature at startup (keeps this module free of auth imports). */
+export function configureAuth(bridge: AuthBridge): void {
+  auth = bridge;
+}
+
+type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
+
+http.interceptors.request.use((config) => {
+  const token = auth.getAccessToken();
+  if (token && !config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+http.interceptors.response.use(undefined, async (error: unknown) => {
+  const apiError = toApiClientError(error);
+  const config =
+    error instanceof AxiosError ? (error.config as RetriableConfig | undefined) : undefined;
+  // An expired access token: renew once and replay the request. Auth endpoints never retry.
+  if (apiError.status === 401 && config && !config._retried && !config.url?.startsWith('/auth/')) {
+    config._retried = true;
+    const token = await auth.refresh().catch(() => null);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      return http.request(config);
+    }
+  }
+  return Promise.reject(apiError);
+});
 
 /** GET returning the unwrapped `data` of the success envelope. */
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
