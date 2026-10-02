@@ -98,7 +98,7 @@ function searchBuses(s: TransportSearch): BusResult[] {
       departure: toTime(dep),
       arrival: toTime(dep + duration),
       durationMins: duration,
-      price: round(Math.max(299, km * perKm * (0.85 + r() * 0.4))),
+      price: round(Math.max(299, (180 + km * perKm) * (0.8 + r() * 0.6))),
       rating: Math.round((3.3 + r() * 1.6) * 10) / 10,
       seatsLeft: between(r, 3, 36),
       amenities: BUS_AMENITIES.filter(() => r() > 0.45),
