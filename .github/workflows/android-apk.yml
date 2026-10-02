@@ -1,0 +1,64 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: 1
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
+
+      - name: Rename APK
+        run: |
+          mkdir -p dist
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then NAME="$GITHUB_REF_NAME"; else NAME="${GITHUB_SHA::7}"; fi
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/zproo-$NAME.apk"
+          ls -lh dist
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: zproo-apk
+          path: dist/*.apk
+
+      - name: Attach APK to GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
